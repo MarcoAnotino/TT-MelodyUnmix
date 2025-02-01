@@ -1,7 +1,11 @@
-# TT-MelodyUnmix
-Melody Unmix: Aplicación web para separación de pistas y descomposición musical
+# 🎵 TT-MelodyUnmix
 
-Tecnologías a utilizar:
+## Descripción
+**Melody Unmix** es una aplicación web diseñada para la separación de pistas y descomposición musical mediante el uso de inteligencia artificial y procesamiento de señales. 
+
+---
+
+## 🚀 Tecnologías a utilizar:
     - Bootstrap: Es un framework CSS que se utiliza para la creación de aplicaciones front-end. Incluye estilos predefinidos de CSS y también componentes interactivos de Javascript.
 
     - CSS: Es un lenguaje de estilos utilizado en la programación web, nos permite dar color, tamaño, posicion, animación y estilo a los elementos HTML.
@@ -19,9 +23,9 @@ Tecnologías a utilizar:
     
     - SQL: Es un lenguaje de consulta de base de datos. Este nos ayudará para almacenar los datos de las pistas musicales que se carguen en la aplicación web.
 
-Guía de instalación de las tecnologías:
+## 🔧 Guía de instalación de las tecnologías:
 
-    Bootstrap: 
+    #### Bootstrap: 
     Colocar el siguiente código en el archivo HTML dentro del <head> :
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
@@ -29,7 +33,7 @@ Guía de instalación de las tecnologías:
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 
-    Django: 
+    #### Django: 
     Ejecutar en una terminal el siguiente comando:
     pip install django
 
@@ -41,7 +45,7 @@ Guía de instalación de las tecnologías:
     cd myproject
     python manage.py runserver
 
-    Python:
+    #### Python:
     Descargar pyhton desde el sitio oficial: 
     https://www.python.org/downloads/
 
@@ -51,21 +55,21 @@ Guía de instalación de las tecnologías:
     python --version
 
 
-    TensorFlow:
+    #### TensorFlow:
     En una terminal, ejecutar el comando:
     pip install tensorflow
 
     Verificar la instalación con el comando:
     python -c "import tensorflow as tf; print(tf.__version__)"
 
-    Spleeter:
+    #### Spleeter:
     En una terminal, ejecutar el comando:
     pip install spleeter
 
     Verificar la instalación con el comando:
     spleeter --help
 
-    SQL:
+    #### SQL:
     Descargaremos MySQLServer desde el sitio oficial:
     https://dev.mysql.com/downloads/mysql/
 
