@@ -3,27 +3,6 @@
 ## Introducción
 **Melody Unmix** es una aplicación web diseñada para la separación de pistas y descomposición musical utilizando inteligencia artificial y procesamiento digital de señales. Permite a los usuarios cargar archivos de audio y extraer individualmente instrumentos como voz, guitarra, bajo y batería. 
 
-A través de un entorno intuitivo y accesible, Melody Unmix ofrece una herramienta poderosa para músicos, productores y aficionados que deseen analizar y manipular audio de manera profesional.
-
-## Tecnologías Utilizadas
-Para el desarrollo de la aplicación, se emplearán las siguientes tecnologías:
-
-### Front-end
-- **Bootstrap**: Framework CSS que proporciona estilos predefinidos y componentes interactivos de JavaScript para facilitar el desarrollo de interfaces modernas y responsivas.
-- **CSS**: Lenguaje de estilos que permite definir el diseño visual de los elementos HTML, incluyendo colores, tamaños, posicionamiento y animaciones.
-- **JavaScript**: Lenguaje de programación que añade interactividad y dinamismo a la aplicación web.
-
-### Back-end
-- **Django**: Framework web en Python que facilita la construcción del back-end, proporcionando herramientas para la creación de APIs y la gestión de bases de datos.
-- **Python**: Lenguaje de programación ampliamente utilizado en aplicaciones de inteligencia artificial y análisis de datos.
-
-### Inteligencia Artificial y Procesamiento de Señales
-- **TensorFlow**: Biblioteca de código abierto desarrollada por Google para el procesamiento matemático y Machine Learning, utilizada para el análisis y manipulación de señales de audio.
-- **Spleeter**: Herramienta de código abierto desarrollada por Deezer, especializada en la separación de fuentes musicales, permitiendo dividir pistas de audio en componentes individuales.
-
-### Base de Datos
-- **SQL**: Lenguaje de consulta estructurado utilizado para la gestión y almacenamiento de datos de pistas musicales procesadas por la aplicación.
-
 ## Implementación y Funcionamiento
 ### Estructura General del Sistema
 1. El usuario accede a la página web **Melody Unmix** desde su navegador.
