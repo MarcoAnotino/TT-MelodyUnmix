@@ -6,10 +6,10 @@
 ---
 
 ## 🚀 Tecnologías a utilizar:
-**Bootstrap**
+**Bootstrap**: 
     Es un framework CSS que se utiliza para la creación de aplicaciones front-end. Incluye estilos predefinidos de CSS y también componentes interactivos de Javascript.
 
-**CSS**
+**CSS**:
     Es un lenguaje de estilos utilizado en la programación web, nos permite dar color, tamaño, posicion, animación y estilo a los elementos HTML.
 
 **Javascript**
