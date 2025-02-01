@@ -10,7 +10,7 @@ Tecnologías a utilizar:
     de aplicaciones de análisis de datos y de inteligencia artificial (IA).
     - TensorFlow: Se trata de una biblioteca de código abierto perteneciente a GOOGLE, se utiliza para procesamiento matemático y para Machine Learning. Este nos ayudará para el procesamiento de las señales.
     - Spleeter: Es una herramienta desarrollada por Deezer, la cual ayuda a la descomposición de fuentes musicales, nos ayudará para la división de las pistas de audio y separar voz, guitarra, bajo y bateria.
-    - SQL: Es un lenguaje de consulta de base de datos. Este nos ayudará para almacenar los datos de las pistas musicales que se carguen en la aplicación web.
+    - SQL: Es un lenguaje de consulta de base de datos. Este nos ayudará para almacenar los datos de las pistas musicales que se carguen en la aplicación web
 
 Guía de instalación de las tecnologías:
 
