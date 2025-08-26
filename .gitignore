@@ -1,0 +1,65 @@
+# =========================
+# Python / Django
+# =========================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+.env
+
+# Django stuff:
+*.log
+*.pot
+db.sqlite3
+media/
+staticfiles/
+*.py[cod]
+
+# Django migrations
+**/migrations/*.py
+!**/migrations/__init__.py
+
+# =========================
+# Node / React (frontend)
+# =========================
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+frontend/*.local
+frontend/*.lock
+
+# Tailwind / PostCSS / temporary files
+frontend/*.css.map
+
+# =========================
+# Project-specific folders
+# =========================
+Melody_Unmix/   # Vacía o archivos temporales
+Modelo_IA/__pycache__/
+Procesamiento_Señales/__pycache__/
+
+# =========================
+# IDEs
+# =========================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# macOS
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Environment files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
