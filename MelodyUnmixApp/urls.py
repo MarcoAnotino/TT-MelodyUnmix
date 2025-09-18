@@ -16,7 +16,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.http import JsonResponse
+
+
+def api_home(request):
+    data = {
+        "message": "Welcome to the MelodyUnmix API",
+        "status": "success"
+    }
+    return JsonResponse(data)
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('api/', api_home),
 ]
