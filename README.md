@@ -54,6 +54,7 @@ cd myproject
 python manage.py runserver
 
 #### Python:
+Version: 3.11
 Descargar pyhton desde el sitio oficial: 
 https://www.python.org/downloads/
 
@@ -91,5 +92,8 @@ mysql -u root -p
 
 Importante, instalar la conexión de python con MySQL, mediante el siguiente comando:
 pip install mysql-connector-python
+
+### Node:
+Version: 22.17
 
 
