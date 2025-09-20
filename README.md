@@ -78,20 +78,21 @@ pip install spleeter
 Verificar la instalación con el comando:
 spleeter --help
 
-#### SQL:
-Descargaremos MySQLServer desde el sitio oficial:
-https://dev.mysql.com/downloads/mysql/
+#### PostgreSQL:
+Version: 16
 
-Realizaremos la instalación y configuraremos un usuario root y una contraseña
+#### MongoDB
 
-Verificaremos la instalacion mediante el comando:
-mysql --version
+##### MacOS
+```bash
+brew tap mongodb/brew
+brew install mongodb-community@7.0
+brew services start mongodb-community@7.0
+```
+##### Windows
+- Descargar MongoDB Community 7.0: [mongodb.com](https://www.mongodb.com/try/download/community)
+- Instalar y habilitar servicio MongoDB
 
-Accederemos a la consola mediante el siguiente comando:
-mysql -u root -p
-
-Importante, instalar la conexión de python con MySQL, mediante el siguiente comando:
-pip install mysql-connector-python
 
 ### Node:
 Version: 22.17
