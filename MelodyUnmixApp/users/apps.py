@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class UsuariosConfig(AppConfig):
+class UsersConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'MelodyUnmixApp.usuarios'
+    name = 'MelodyUnmixApp.users'

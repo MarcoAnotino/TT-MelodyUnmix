@@ -34,17 +34,26 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    # Apps de Django
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Apps de terceros
     'corsheaders',
     'rest_framework',
-    'MelodyUnmixApp.usuarios',
-    'MelodyUnmixApp.audio',
-]
+
+    # Apps propias
+    'MelodyUnmixApp.users',
+    'MelodyUnmixApp.audios',
+    'MelodyUnmixApp.processing',
+    'MelodyUnmixApp.dashboard',
+    'MelodyUnmixApp.logs',
+
+    ]
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -120,7 +129,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-AUTH_USER_MODEL = 'usuarios.Usuario'
+AUTH_USER_MODEL = 'users.Usuario'
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
