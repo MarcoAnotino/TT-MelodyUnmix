@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
+    "rest_framework_simplejwt.token_blacklist",  # revocación refresh de tokens
     'MelodyUnmixApp.users',
 ]
 
@@ -57,6 +58,11 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True  # Solo para desarrollo
+#En producción lo correcto sería usar
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000",  # tu frontend React en dev
+#     "https://tudominio.com",  # tu dominio real
+# ]
 
 ROOT_URLCONF = 'MelodyUnmixApp.urls'
 
@@ -141,3 +147,19 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+from datetime import timedelta
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    )
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),   # Tokens válidos 1 hora
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),   # Refresh tokens 7 días
+    "ROTATE_REFRESH_TOKENS": True,                 # Cambia el refresh al usarse
+    "BLACKLIST_AFTER_ROTATION": True,              # Invalida refresh viejo
+    "AUTH_HEADER_TYPES": ("Bearer",),              # Se usa en Authorization: Bearer <token>
+}
