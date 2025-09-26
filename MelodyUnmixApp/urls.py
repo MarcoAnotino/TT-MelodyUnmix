@@ -16,6 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.urls import path, include
 from django.http import JsonResponse
 
 # Importamos vistas de simplejwt
@@ -45,5 +46,7 @@ urlpatterns = [
 
     # Endpoints de tu app users (ejemplo: registro, perfil, etc.)
     path("api/users/", include("MelodyUnmixApp.users.urls")),
+
+    path("dashboard/", include("MelodyUnmixApp.dashboard.urls")),
 
 ]

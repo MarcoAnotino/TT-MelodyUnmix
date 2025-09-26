@@ -79,7 +79,7 @@ ROOT_URLCONF = 'MelodyUnmixApp.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / "MelodyUnmixApp" / "templates"],  # <-- aquí
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -91,6 +91,7 @@ TEMPLATES = [
         },
     },
 ]
+
 
 WSGI_APPLICATION = 'MelodyUnmixApp.wsgi.application'
 
@@ -116,6 +117,12 @@ DATABASES = {
 MONGO_CLIENT = pymongo.MongoClient(config('MONGO_URI'))
 MONGO_DB = MONGO_CLIENT.get_database()
 
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators

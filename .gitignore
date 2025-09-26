@@ -64,7 +64,7 @@ Procesamiento_Señales/__pycache__/
 .DS_Store
 
 # Logs
-logs/
+
 *.log
 
 # Environment files
