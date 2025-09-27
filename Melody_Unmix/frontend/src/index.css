@@ -2,17 +2,37 @@
 @tailwind components;
 @tailwind utilities;
 
-
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@font-face {
+  font-family: 'Mazzard-MRegular';
+  src: url('./assets/fonts/Mazzard-Font/MazzardM-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+@font-face {
+  font-family: 'Mazzard-MMedium';
+  src: url('./assets/fonts/Mazzard-Font/MazzardM-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Mazzard-MSemiBold';
+  src: url('./assets/fonts/Mazzard-Font/MazzardM-SemiBold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Mazzard-MLight';
+  src: url('./assets/fonts/Mazzard-Font/MazzardM-Light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Mazzard-HMedium';
+  src: url('./assets/fonts/Mazzard-Font/MazzardH-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
 }

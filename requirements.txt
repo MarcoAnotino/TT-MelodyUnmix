@@ -7,3 +7,5 @@ pymongo==3.11.4
 python-decouple==3.8
 pytz==2025.2
 sqlparse==0.5.3
+argon2-cffi>=21.3.0
+djangorestframework-simplejwt>=5.3.1

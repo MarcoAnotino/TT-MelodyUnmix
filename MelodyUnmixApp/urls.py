@@ -16,6 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.urls import path, include
 from django.http import JsonResponse
 
 
@@ -28,6 +29,8 @@ def api_home(request):
 
 urlpatterns = [
     path('api/', api_home),
+    path("admin/", admin.site.urls),
+    path("api/", include("MelodyUnmixApp.users.urls", namespace="users")),
     path("dashboard/", include("MelodyUnmixApp.dashboard.urls")),
 
 ]
