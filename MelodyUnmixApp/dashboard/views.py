@@ -1,6 +1,7 @@
 from django.shortcuts import render
-from MelodyUnmixApp.audios.models import ProcesamientoAudio, PistaSeparada
-from MelodyUnmixApp.utils.mongo import get_collection
+from audios.models import ProcesamientoAudio, PistaSeparada
+from users.models import Usuario  # <-- importar tu modelo de usuarios
+from utils.mongo import get_collection
 import os
 from django.conf import settings
 
@@ -10,12 +11,11 @@ def dashboard_view(request):
     # ---------------------
     audios = ProcesamientoAudio.objects.all().order_by("-fecha_procesamiento")
     pistas = PistaSeparada.objects.all().order_by("-fecha_creacion")
+    usuarios = Usuario.objects.all().order_by("-fecha_registro")  # <-- usuarios de Postgres
 
     # ---------------------
     # Datos desde MongoDB
     # ---------------------
-
-    # Pistas de MongoDB
     mongo_pistas = []
     try:
         cursor = get_collection("Pistas_Separadas").find().sort("fecha_creacion", -1)
@@ -26,7 +26,6 @@ def dashboard_view(request):
     except Exception as e:
         print("Error al obtener Pistas_Separadas:", e)
 
-    # Usuarios de MongoDB
     mongo_usuarios = []
     try:
         cursor = get_collection("Usuarios").find()
@@ -37,7 +36,6 @@ def dashboard_view(request):
     except Exception as e:
         print("Error al obtener Usuarios:", e)
 
-    # Logs de MongoDB
     mongo_logs = []
     try:
         cursor = get_collection("logs").find().sort("timestamp", -1).limit(50)
@@ -63,6 +61,7 @@ def dashboard_view(request):
     context = {
         "audios": audios,
         "pistas": pistas,
+        "usuarios": usuarios,  # <-- agregamos usuarios
         "mongo_pistas": mongo_pistas,
         "mongo_usuarios": mongo_usuarios,
         "mongo_logs": mongo_logs,

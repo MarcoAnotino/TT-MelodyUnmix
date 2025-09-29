@@ -37,6 +37,18 @@
           <li class="list-group-item">No hay pistas</li>
         {% endfor %}
       </ul>
+
+      <h3>👤 Usuarios en PostgreSQL</h3>
+      <ul class="list-group mb-4">
+        {% for usuario in usuarios %}
+          <li class="list-group-item">
+            {{ usuario.username }} - {{ usuario.email }} - {{ usuario.fecha_registro }}
+          </li>
+        {% empty %}
+          <li class="list-group-item">No hay usuarios en PostgreSQL</li>
+        {% endfor %}
+      </ul>
+
     </div>
 
     <!-- MongoDB -->

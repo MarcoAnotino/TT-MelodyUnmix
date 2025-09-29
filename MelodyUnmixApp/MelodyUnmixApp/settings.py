@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure--kqcq+-ehid3c%g_^^0t#sy4b!87w1-t$d2o10!vsvh0yi%6)6'
+SECRET_KEY = 'DJ_SECRET_KEY'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -47,11 +47,11 @@ INSTALLED_APPS = [
     'rest_framework',
 
     # Apps propias
-    'MelodyUnmixApp.users',
-    'MelodyUnmixApp.audios',
-    'MelodyUnmixApp.processing',
-    'MelodyUnmixApp.dashboard',
-    'MelodyUnmixApp.logs',
+    'users',
+    'audios',
+    'processing',
+    'dashboard',
+    'logs',
 
     ]
 

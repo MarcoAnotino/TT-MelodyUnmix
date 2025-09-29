@@ -30,7 +30,8 @@ def api_home(request):
 urlpatterns = [
     path('api/', api_home),
     path("admin/", admin.site.urls),
-    path("api/", include("MelodyUnmixApp.users.urls", namespace="users")),
-    path("dashboard/", include("MelodyUnmixApp.dashboard.urls")),
+    path("api/", include("users.urls", namespace="users")),
+    path("dashboard/", include("dashboard.urls")),
+    path("api/audios/", include("audios.urls")),
 
 ]
