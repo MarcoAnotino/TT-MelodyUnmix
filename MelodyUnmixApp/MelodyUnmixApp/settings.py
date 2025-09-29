@@ -125,7 +125,7 @@ DATABASES = {
 
 # MongoDB (solo para conexión manual, no ORM)
 MONGO_CLIENT = pymongo.MongoClient(config('MONGO_URI'))
-MONGO_DB = MONGO_CLIENT.get_database()
+MONGO_DB = config('MONGO_DB')
 
 
 MEDIA_URL = '/media/'

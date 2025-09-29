@@ -46,7 +46,7 @@ def agregar_pista(audio_id, instrumento, url_archivo, formato, tamano_mb):
     }
     collection = get_collection()
     result = collection.update_one(
-        {"_id": audio_id},
+        {"_id": ObjectId(audio_id)},
         {"$push": {"pistas_separadas": pista}}
     )
     return result.modified_count
