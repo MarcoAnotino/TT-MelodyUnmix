@@ -1,14 +1,26 @@
 from django.urls import path
-from .views import CustomTokenObtainPairView
-from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.views import (
+    TokenBlacklistView,
+    TokenObtainPairView,   # login
+    TokenRefreshView,      # refrescar token
+    TokenVerifyView,        # verificar validez
+    TokenBlacklistView
+)
+from .views import RegisterView, UserDetailView
+
+app_name = "users"
 
 urlpatterns = [
-    # Login personalizado
-    path("login/", CustomTokenObtainPairView.as_view(), name="custom_token_obtain_pair"),
+    # Registro
+    path("auth/register/", RegisterView.as_view(), name="register"),
 
-    # Refresh token
-    path("refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    # Login / Tokens
+    path("auth/login/", TokenObtainPairView.as_view(), name="login"),
+    path("auth/logout/", TokenBlacklistView.as_view(), name="logout"),
 
-    # aquí después puedes añadir más rutas de users
-    # path("profile/", ProfileView.as_view(), name="profile"),
+    path("auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("auth/verify/", TokenVerifyView.as_view(), name="token_verify"),
+
+    # Información del usuario logueado
+    path("me/", UserDetailView.as_view(), name="me"),
 ]

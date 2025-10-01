@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 from decouple import config
+from datetime import timedelta
+import sys
 import pymongo
 
 
@@ -23,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure--kqcq+-ehid3c%g_^^0t#sy4b!87w1-t$d2o10!vsvh0yi%6)6'
+SECRET_KEY = 'DJ_SECRET_KEY'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -48,13 +50,29 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",  # revocación refresh de tokens
 
     # Apps propias
-    'MelodyUnmixApp.users',
-    'MelodyUnmixApp.audios',
-    'MelodyUnmixApp.processing',
-    'MelodyUnmixApp.dashboard',
-    'MelodyUnmixApp.logs',
+    'users',
+    'audios',
+    'processing',
+    'dashboard',
+    'logs',
 
     ]
+
+# Password hashes for security
+
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.Argon2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher",
+    "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",
+    "django.contrib.auth.hashers.ScryptPasswordHasher",
+]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -73,6 +91,14 @@ CORS_ALLOW_ALL_ORIGINS = True  # Solo para desarrollo
 #     "http://localhost:3000",  # tu frontend React en dev
 #     "https://tudominio.com",  # tu dominio real
 # ]
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),  # ajusta según necesidad
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
 
 ROOT_URLCONF = 'MelodyUnmixApp.urls'
 
@@ -114,8 +140,9 @@ DATABASES = {
 }
 
 # MongoDB (solo para conexión manual, no ORM)
+MONGO_URI = config("MONGO_URI")
 MONGO_CLIENT = pymongo.MongoClient(config('MONGO_URI'))
-MONGO_DB = MONGO_CLIENT.get_database()
+MONGO_DB = config('MONGO_DB')
 
 
 MEDIA_URL = '/media/'
@@ -166,18 +193,10 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-from datetime import timedelta
-
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    )
-}
-
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),   # Tokens válidos 1 hora
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),   # Refresh tokens 7 días
-    "ROTATE_REFRESH_TOKENS": True,                 # Cambia el refresh al usarse
-    "BLACKLIST_AFTER_ROTATION": True,              # Invalida refresh viejo
-    "AUTH_HEADER_TYPES": ("Bearer",),              # Se usa en Authorization: Bearer <token>
-}
+if "test" in sys.argv:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": ":memory:",
+        }
+    }

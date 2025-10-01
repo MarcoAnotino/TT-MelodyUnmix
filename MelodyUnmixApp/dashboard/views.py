@@ -1,6 +1,7 @@
 from django.shortcuts import render
-from MelodyUnmixApp.audios.models import ProcesamientoAudio, PistaSeparada
-from MelodyUnmixApp.utils.mongo import get_collection
+from audios.models import ProcesamientoAudio, PistaSeparada, LogProcesamiento
+from users.models import Usuario
+from utils.mongo import get_collection
 import os
 from django.conf import settings
 
@@ -8,45 +9,32 @@ def dashboard_view(request):
     # ---------------------
     # Datos desde Postgres
     # ---------------------
-    audios = ProcesamientoAudio.objects.all().order_by("-fecha_procesamiento")
-    pistas = PistaSeparada.objects.all().order_by("-fecha_creacion")
+    postgres_audios = ProcesamientoAudio.objects.all().order_by("-fecha_procesamiento")
+    postgres_pistas = PistaSeparada.objects.all().order_by("-fecha_creacion")
+    postgres_usuarios = Usuario.objects.all().order_by("-fecha_registro")
+    postgres_logs = LogProcesamiento.objects.all().order_by("-fecha")[:50]
 
     # ---------------------
     # Datos desde MongoDB
     # ---------------------
-
-    # Pistas de MongoDB
     mongo_pistas = []
     try:
-        cursor = get_collection("Pistas_Separadas").find().sort("fecha_creacion", -1)
+        cursor = get_collection("audios_subidos").find().sort("fecha", -1)
         for doc in cursor:
-            pista_safe = dict(doc)
-            pista_safe["id"] = str(pista_safe.pop("_id"))
-            mongo_pistas.append(pista_safe)
+            for pista in doc.get("pistas_separadas", []):
+                pista["_id"] = str(doc["_id"])
+                mongo_pistas.append(pista)
     except Exception as e:
-        print("Error al obtener Pistas_Separadas:", e)
+        print("Error al obtener Pistas en Mongo:", e)
 
-    # Usuarios de MongoDB
-    mongo_usuarios = []
-    try:
-        cursor = get_collection("Usuarios").find()
-        for doc in cursor:
-            usuario_safe = dict(doc)
-            usuario_safe["id"] = str(usuario_safe.pop("_id"))
-            mongo_usuarios.append(usuario_safe)
-    except Exception as e:
-        print("Error al obtener Usuarios:", e)
-
-    # Logs de MongoDB
     mongo_logs = []
     try:
-        cursor = get_collection("logs").find().sort("timestamp", -1).limit(50)
-        for doc in cursor:
-            log_safe = dict(doc)
-            log_safe["id"] = str(log_safe.pop("_id"))
-            mongo_logs.append(log_safe)
+        col = get_collection("logs")
+        for doc in col.find().sort("timestamp", -1).limit(50):
+            doc["_id"] = str(doc["_id"])
+            mongo_logs.append(doc)
     except Exception as e:
-        print("Error al obtener logs:", e)
+        print("Error al obtener logs en Mongo:", e)
 
     # ---------------------
     # Logs del archivo spleeter.log
@@ -58,14 +46,22 @@ def dashboard_view(request):
             file_logs = f.readlines()[-50:]
 
     # ---------------------
-    # Contexto para el template
+    # Contexto separado por pestañas
     # ---------------------
     context = {
-        "audios": audios,
-        "pistas": pistas,
-        "mongo_pistas": mongo_pistas,
-        "mongo_usuarios": mongo_usuarios,
-        "mongo_logs": mongo_logs,
+        # Postgres
+        "postgres": {
+            "audios": postgres_audios,
+            "pistas": postgres_pistas,
+            "usuarios": postgres_usuarios,
+            "logs": postgres_logs,
+        },
+        # MongoDB
+        "mongo": {
+            "pistas": mongo_pistas,
+            "logs": mongo_logs,
+        },
+        # Logs archivo
         "file_logs": file_logs,
     }
 

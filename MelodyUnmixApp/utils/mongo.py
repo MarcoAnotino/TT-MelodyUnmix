@@ -1,8 +1,7 @@
 from django.conf import settings
+from pymongo import MongoClient
 
 def get_collection(collection_name: str):
-    """
-    Devuelve una colección de MongoDB lista para consultas.
-    """
-    db = settings.MONGO_DB  # Base de datos definida en settings
+    client = MongoClient(settings.MONGO_URI)
+    db = client[settings.MONGO_DB]
     return db[collection_name]
