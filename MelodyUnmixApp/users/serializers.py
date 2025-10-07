@@ -8,10 +8,11 @@ User = get_user_model()
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
     password2 = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+    rol = serializers.ChoiceField(choices=User.Roles.choices, default=User.Roles.USER)
 
     class Meta:
         model = User
-        fields = ("id", "username", "email", "password", "password2")
+        fields = ("id", "username", "email", "password", "password2", "rol")
         extra_kwargs = {
             "email": {"required": True, "allow_blank": False},
             "username": {"required": True, "allow_blank": False},
@@ -36,5 +37,5 @@ class RegisterSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ("id", "username", "email", "fecha_registro")
+        fields = ("id", "username", "email", "rol", "fecha_registro")
 
