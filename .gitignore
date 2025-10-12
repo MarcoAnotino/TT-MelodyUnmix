@@ -72,3 +72,7 @@ Procesamiento_Señales/__pycache__/
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Pruebas de audio docker
+input_audio
+output_audio
