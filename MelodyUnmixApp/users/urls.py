@@ -6,7 +6,7 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,        # verificar validez
     TokenBlacklistView
 )
-from .views import RegisterView, UserDetailView
+from .views import RegisterView, UserDetailView, UserListView
 
 app_name = "users"
 
@@ -23,4 +23,5 @@ urlpatterns = [
 
     # Información del usuario logueado
     path("me/", UserDetailView.as_view(), name="me"),
+    path("", UserListView.as_view(), name="user-list"),  # Listado de usuarios (solo admin)
 ]
