@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 from decouple import config
+from datetime import timedelta
+import sys
 import pymongo
 
 
@@ -45,6 +47,8 @@ INSTALLED_APPS = [
     # Apps de terceros
     'corsheaders',
     'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
+
 
     # Apps propias
     'users',
@@ -85,12 +89,26 @@ MIDDLEWARE = [
 
 CORS_ALLOW_ALL_ORIGINS = True  # Solo para desarrollo
 
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),  # ajusta según necesidad
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
 ROOT_URLCONF = 'MelodyUnmixApp.urls'
+
+from pathlib import Path
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / "MelodyUnmixApp" / "templates"],  # <-- aquí
+        # 👇 Cambia tus rutas a donde realmente está tu carpeta de templates
+        'DIRS': [
+            BASE_DIR / "templates",
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -102,6 +120,7 @@ TEMPLATES = [
         },
     },
 ]
+
 
 
 WSGI_APPLICATION = 'MelodyUnmixApp.wsgi.application'
@@ -125,6 +144,7 @@ DATABASES = {
 }
 
 # MongoDB (solo para conexión manual, no ORM)
+MONGO_URI = config("MONGO_URI")
 MONGO_CLIENT = pymongo.MongoClient(config('MONGO_URI'))
 MONGO_DB = config('MONGO_DB')
 
@@ -176,3 +196,12 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+if "test" in sys.argv:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": ":memory:",
+        }
+    }
