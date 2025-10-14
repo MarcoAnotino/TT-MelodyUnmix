@@ -3,6 +3,8 @@ from django.urls import path, include
 from django.http import JsonResponse
 from django.db import connections
 from django.conf import settings
+from django.shortcuts import render
+
 
 def api_home(request):
     return JsonResponse({
@@ -34,6 +36,8 @@ def health_check(request):
 
     return JsonResponse(health_status)
 
+def pagina_prueba(request):
+    return render(request, "prueba_demucs.html")
 
 urlpatterns = [
     # Ping inicial de la API
@@ -48,4 +52,7 @@ urlpatterns = [
 
     # Dashboard (decide si es panel HTML o también API)
     path("dashboard/", include("dashboard.urls")),
+
+    # Página de prueba
+    path("prueba-demucs/", pagina_prueba),
 ]

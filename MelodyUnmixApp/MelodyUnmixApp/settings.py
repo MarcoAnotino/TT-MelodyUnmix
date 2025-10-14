@@ -99,10 +99,16 @@ SIMPLE_JWT = {
 
 ROOT_URLCONF = 'MelodyUnmixApp.urls'
 
+from pathlib import Path
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / "MelodyUnmixApp" / "templates"],  # <-- aquí
+        # 👇 Cambia tus rutas a donde realmente está tu carpeta de templates
+        'DIRS': [
+            BASE_DIR / "templates",
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -114,6 +120,7 @@ TEMPLATES = [
         },
     },
 ]
+
 
 
 WSGI_APPLICATION = 'MelodyUnmixApp.wsgi.application'

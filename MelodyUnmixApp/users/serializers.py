@@ -12,7 +12,18 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ("id", "username", "email", "password", "password2", "rol")
+        fields = (
+            "id", 
+            "username", 
+            "email", 
+            "password", 
+            "password2", 
+            "rol",
+            "fecha_registro",
+            "is_active",
+            )
+        read_only_fields = ("fecha_registro", "is_active")
+
         extra_kwargs = {
             "email": {"required": True, "allow_blank": False},
             "username": {"required": True, "allow_blank": False},
@@ -37,5 +48,12 @@ class RegisterSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ("id", "username", "email", "rol", "fecha_registro")
+        fields = (
+            "id", 
+            "username", 
+            "email", 
+            "rol", 
+            "fecha_registro", 
+            "is_active"
+        )
 
