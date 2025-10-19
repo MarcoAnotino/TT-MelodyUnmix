@@ -2,37 +2,153 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Fuentes Mazzard */
 @font-face {
   font-family: 'Mazzard-MRegular';
   src: url('./assets/fonts/Mazzard-Font/MazzardM-Regular.otf') format('opentype');
-  font-weight: normal;
+  font-weight: 400;
   font-style: normal;
 }
-
 @font-face {
   font-family: 'Mazzard-MMedium';
   src: url('./assets/fonts/Mazzard-Font/MazzardM-Medium.otf') format('opentype');
   font-weight: 500;
   font-style: normal;
 }
-
 @font-face {
   font-family: 'Mazzard-MSemiBold';
   src: url('./assets/fonts/Mazzard-Font/MazzardM-SemiBold.otf') format('opentype');
   font-weight: 600;
   font-style: normal;
 }
-
 @font-face {
   font-family: 'Mazzard-MLight';
   src: url('./assets/fonts/Mazzard-Font/MazzardM-Light.otf') format('opentype');
   font-weight: 300;
   font-style: normal;
 }
-
 @font-face {
   font-family: 'Mazzard-HMedium';
   src: url('./assets/fonts/Mazzard-Font/MazzardH-Medium.otf') format('opentype');
   font-weight: 500;
   font-style: normal;
+}
+
+/*  Base  */
+@layer base {
+  html, body, #root { @apply h-full; }
+  body { @apply font-sans text-white; }
+  button, input, select, textarea {
+    @apply appearance-none bg-transparent border-0 outline-none;
+  }
+}
+
+/* Utilidad exportada desde Figma */
+@layer components { .all-\[unset\] { all: unset; } }
+
+/* Fondo Home (linear + glows en UN solo background)  */
+.bg-home{
+  background:
+    /* Luz superior */
+    radial-gradient(1200px 800px at 50% -120px,
+      rgba(8,217,214,.28) 0%,
+      rgba(8,217,214,.14) 40%,
+      rgba(8,217,214,.06) 60%,
+      rgba(8,217,214,0) 70%),
+    /* Luz izquierda */
+    radial-gradient(800px 1200px at -120px 190vh,
+      rgba(8,217,214,.22) 0%,
+      rgba(8,217,214,.10) 45%,
+      rgba(8,217,214,0) 70%),
+    /* Luz derecha */
+    radial-gradient(800px 1200px at calc(100% + 120px) 190vh,
+      rgba(8,217,214,.22) 0%,
+      rgba(8,217,214,.10) 45%,
+      rgba(8,217,214,0) 70%),
+    /* Linear del Figma */
+    linear-gradient(180deg, #333C4E 3%, #252A34 49%, #151516 95%);
+  background-repeat: no-repeat;
+  background-attachment: scroll; /* evita artefactos en Safari */
+  background-size: auto;
+}
+
+.bg-signin{
+  background:
+    /* Luz superior: */
+    radial-gradient(1200px 800px at 50% -240px,
+      rgba(198,37,209,.28) 0%,
+      rgba(198,37,209,.14) 40%,
+      rgba(198,37,209,.06) 60%,
+      rgba(198,37,209,0) 70%),
+    /* Luz izquierda */
+    radial-gradient(800px 1200px at -120px 60vh,
+      rgba(198,37,209,.22) 0%,
+      rgba(198,37,209,.10) 45%,
+      rgba(198,37,209,0) 70%),
+    /* Luz derecha */
+    radial-gradient(800px 1200px at calc(100% + 120px) 60vh,
+      rgba(198,37,209,.22) 0%,
+      rgba(198,37,209,.10) 45%,
+      rgba(198,37,209,0) 70%),
+    /* Linear del Figma */
+    linear-gradient(180deg, #333C4E 3%, #252A34 49%, #151516 95%);
+  background-repeat: no-repeat;
+  background-attachment: scroll; /* evita artefactos en Safari */
+  background-size: auto;
+}
+
+.bg-signup{
+  background:
+    /* Luz superior: */
+    radial-gradient(1200px 800px at 50% -240px,
+      rgba(168,125,6,.28) 0%,
+      rgba(168,125,6,.14) 40%,
+      rgba(168,125,6,.06) 60%,
+      rgba(168,125,6,0) 70%),
+    /* Luz izquierda */
+    radial-gradient(800px 1200px at -120px 60vh,
+      rgba(168,125,6,.22) 0%,
+      rgba(168,125,6,.10) 45%,
+      rgba(168,125,6,0) 70%),
+    /* Luz derecha */
+    radial-gradient(800px 1200px at calc(100% + 120px) 60vh,
+      rgba(168,125,6,.22) 0%,
+      rgba(168,125,6,.10) 45%,
+      rgba(168,125,6,0) 70%),
+    /* Linear del Figma */
+    linear-gradient(180deg, #333C4E 3%, #252A34 49%, #151516 95%);
+  background-repeat: no-repeat;
+  background-attachment: scroll; /* evita artefactos en Safari */
+  background-size: auto;
+}
+
+.bg-forgot-password{
+  background:
+    /* Luz superior: */
+    radial-gradient(1200px 800px at 50% -240px,
+      rgba(152, 0, 3, 0.28) 0%,
+      rgba(152, 0, 3,.14) 40%,
+     rgba(152, 0, 3,0) 70%),
+    /* Luz izquierda */
+    radial-gradient(800px 1200px at -120px 60vh,
+      rgba(152, 0, 3,.22) 0%,
+      rgba(152, 0, 3,.10) 45%,
+      rgba(152, 0, 3,0) 70%),
+    /* Luz derecha */
+    radial-gradient(800px 1200px at calc(100% + 120px) 60vh,
+      rgba(152, 0, 3,.22) 0%,
+      rgba(152, 0, 3,.10) 45%,
+      rgba(152, 0, 3,0) 70%),
+    /* Linear del Figma */
+    linear-gradient(180deg, #333C4E 3%, #252A34 49%, #151516 95%);
+  background-repeat: no-repeat;
+  background-attachment: scroll; /* evita artefactos en Safari pa las macbook */
+  background-size: auto;
+}
+
+/*  Kill-switch para assets viejos de Anima que rayan el fondo */
+img[alt^="Ellipse"],
+img.anima-ellipse,
+.anima-ellipse{
+  display: none !important;
 }

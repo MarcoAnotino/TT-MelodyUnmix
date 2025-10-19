@@ -1,13 +1,16 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
+
 
 const CTA = () => {
+  const navigate = useNavigate();
   return (
     <div className="flex flex-col items-center py-20">
       <h2 className="text-white text-5xl font-mazzard-m-semi-bold mb-10">
         Comienza Gratis
       </h2>
       
-      <button className="w-64 h-24 bg-[#08d9d6] rounded-[20px] flex items-center justify-center">
+      <button onClick={() => navigate("/signup")} className="w-64 h-24 bg-[#08d9d6] rounded-[20px] flex items-center justify-center">
         <span className="text-[#141516] text-5xl font-mazzard-m-semi-bold">
           Sign Up
         </span>
