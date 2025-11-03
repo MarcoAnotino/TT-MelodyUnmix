@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 
+// Manejo de errores: Modulo reutilizable
+import ErrorModal from "../components/ErrorModal.jsx";
+
 // Assets 
 import image1 from "../assets/images/image-1.png"; // Voz
 import image2 from "../assets/images/image-2.png"; // Bateria
@@ -31,6 +34,7 @@ export default function UploadedScreen() {
   const [title, setTitle] = useState(initialTitle);
   const [status, setStatus] = useState("running"); // queued | running | processed | error
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null); // { title, message, variant }
   const isReady = status === "processed";
 
   const statusBadge = useMemo(() => {
@@ -40,31 +44,71 @@ export default function UploadedScreen() {
     return <span className={`${base} bg-rose-500/20 text-rose-300`}>Error</span>;
   }, [status]);
 
-  // Polling simple del estado
+  // Polling con manejo de errores
   useEffect(() => {
     let timer;
+    let failures = 0;
+
     const fetchStatus = async () => {
       try {
         const res = await fetch(`${API}/api/audios/${id}/status`);
-        if (!res.ok) throw new Error("status http");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         setStatus(data.status || "running");
         if (data.title) setTitle(data.title);
-      } catch (_) {
-        // si falla, deja el estado actual pero reintenta
+        failures = 0; // reinicia en éxito
+      } catch (e) {
+        failures += 1;
+        if (failures >= 3 && !error) {
+          setError({
+            title: "Error en la petición",
+            message:
+              "Tuvimos problemas al consultar el estado del procesamiento. Revisa tu conexión o intenta más tarde.",
+            variant: "brand",
+          });
+        }
       } finally {
         timer = setTimeout(fetchStatus, 3000);
       }
     };
     fetchStatus();
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  // Verifica antes de descargar para capturar errores
   const handleDownload = async (stemKey) => {
     setLoading(true);
     try {
-      // Abrir en la misma pestaña fuerza descarga del navegador si el header está bien
+      // Ideal: endpoint HEAD que devuelva 2xx si el archivo está listo
+      const check = await fetch(`${API}/api/audios/${id}/download/${stemKey}`, {
+        method: "HEAD",
+      });
+
+      if (!check.ok) {
+        let message = "Por el momento no se pudo preparar la descarga de este stem.";
+        try {
+          const j = await fetch(`${API}/api/audios/${id}/download/${stemKey}`, {
+            headers: { Accept: "application/json" },
+          });
+          if (j.ok) {
+            const data = await j.json();
+            message = data?.message || message;
+          }
+        } catch {}
+        throw new Error(message);
+      }
+
+      // Dispara la descarga real
       window.location.href = `${API}/api/audios/${id}/download/${stemKey}`;
+    } catch (err) {
+      setError({
+        title: "Error en la petición",
+        message:
+          err?.message ||
+          "Lo sentimos, por el momento presentamos fallas técnicas en nuestro servicio.",
+        variant: "brand",
+      });
     } finally {
       setTimeout(() => setLoading(false), 600); // feedback rápido
     }
@@ -151,6 +195,15 @@ export default function UploadedScreen() {
           </button>
         </div>
       </main>
+
+      {/* Modal de error (backend / descarga) */}
+      <ErrorModal
+        open={!!error}
+        title={error?.title}
+        message={error?.message}
+        variant={error?.variant || "brand"}
+        onClose={() => setError(null)}
+      />
     </div>
   );
 }
