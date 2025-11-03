@@ -6,6 +6,9 @@ import UploadedScreen from "./pages/UploadedScreen";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import ResetDone from "./pages/ResetDone";
+import Profile from "./pages/Profile";
 
 const App = () => {
   return (
@@ -17,6 +20,9 @@ const App = () => {
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/forgot-password" element={<ForgotPassword/>} />
+        <Route path="/reset-password/:uid" element={<ResetPassword />} />
+        <Route path="/reset-done" element={<ResetDone />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </Router>
   );
