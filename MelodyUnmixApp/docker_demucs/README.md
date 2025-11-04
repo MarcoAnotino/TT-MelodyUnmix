@@ -21,7 +21,7 @@ Estructura de carpetas
 ---
 💡 Asegurarse de contar con las carpetas de input_audio y output_audio para una mejor estructura
 
-Melody_Unmix/
+MelodyUnmixApp/
  ├── docker_demucs/
  │    ├── Dockerfile
  │    └── entrypoint.sh

@@ -1,7 +1,7 @@
 import subprocess
 import os
 import sys
-from logs.services import write_log  # 👈 para guardar logs en Mongo
+from logs.services import write_log 
 
 def ejecutar_demucs(nombre_archivo, usuario=None):
     """
