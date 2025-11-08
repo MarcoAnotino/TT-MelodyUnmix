@@ -1,23 +1,29 @@
 import React, { useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
-import { useNavigate } from "react-router-dom";
+import { loginEmail, me } from "../lib/api";
+import AlertCard from "../components/AlertCard";
 
 export default function SignIn() {
-
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const navigate = useNavigate();
+  const [errOpen, setErrOpen] = useState(false);
+  const [errMsg, setErrMsg] = useState("");
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      // Para conectar el api
-      // await api.login({ email, password, remember });
-      console.log("login", { email, password, remember });
+      await loginEmail({ email, password, remember });
+
+      await me();
+      navigate("/app");
+    } catch (err) {
+      setErrMsg("Correo o contraseña inválidos.");
+      setErrOpen(true)
     } finally {
       setSubmitting(false);
     }
@@ -75,11 +81,35 @@ export default function SignIn() {
 
             <div className="flex items-center justify-between pt-1">
               <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                {/* input real accesible */}
                 <input
                   type="checkbox"
                   checked={remember}
                   onChange={(e) => setRemember(e.target.checked)}
-                  className="h-4 w-4 rounded border-white/20 bg-black/60"
+                  className="peer sr-only"
+                />
+                {/* caja custom */}
+                <span
+                  className="
+                  relative h-5 w-5 rounded border border-white/20 bg-black/60
+                  grid place-items-center
+                  peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#08D9D6]
+
+                  /* palomita con ::before (oculta por defecto) */
+                  before:content-[''] before:absolute
+                  before:h-[12px] before:w-[7px]
+                  before:border-b-[3px] before:border-r-[3px] before:border-[#08D9D6]
+                  before:rotate-45
+                  before:opacity-0 before:transition
+
+                  /* centrar (ligeramente arriba para compensar la rotación) */
+                  before:top-1/2 before:left-1/2
+                  before:-translate-x-1/2 before:-translate-y-[58%]
+
+                  /* mostrar palomita al marcar */
+                  peer-checked:before:opacity-100
+                "
+                  aria-hidden
                 />
                 Recordarme
               </label>
@@ -112,6 +142,12 @@ export default function SignIn() {
               </Link>
             </p>
           </form>
+          <AlertCard
+            open={errOpen}
+            title="No pudimos iniciar sesión"
+            description={errMsg}
+            onClose={() => setErrOpen(false)}
+          />
         </div>
       </main>
     </div>

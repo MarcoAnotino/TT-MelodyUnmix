@@ -74,6 +74,21 @@ Procesamiento_Señales/__pycache__/
 .env.test.local
 .env.production.local
 
-# Pruebas de audio docker
-input_audio
-output_audio
+# archivos de audio
+*.mp3
+*.wav
+*.zip
+*.m4a
+*.flac
+*.ogg
+*.opus
+*.mp4
+*.webm
+*.mkv
+*.avi
+*.mov
+
+# Logs mongo
+demucs_logs.txt
+
+output_audio/mdx_exta_q/*

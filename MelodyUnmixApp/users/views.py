@@ -1,6 +1,6 @@
 from rest_framework import generics, permissions
 from django.contrib.auth import get_user_model
-from .serializers import RegisterSerializer, UserSerializer
+from .serializers import RegisterSerializer, UserSerializer, UserAdminSerializer, UserPublicSerializer
 from .permissions import IsAdminUserCustom, IsOwnerOrAdmin
 
 
@@ -13,9 +13,10 @@ class RegisterView(generics.CreateAPIView):
 
 # Perfil del usuario autenticado (solo dueño o admin)
 class UserDetailView(generics.RetrieveAPIView):
-    serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
-
+    permission_classes = [permissions.IsAuthenticated]
+    def get_serializer_class(self):
+        u = self.request.user
+        return UserAdminSerializer if getattr(u, "rol", None) == "ADMIN" else UserPublicSerializer
     def get_object(self):
         return self.request.user
 

@@ -1,4 +1,6 @@
+// src/pages/ForgotPassword.jsx
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import Header from "../components/Header";
 
 const API = process.env.REACT_APP_API_BASE_URL || ""; // p.ej. http://localhost:8000
@@ -7,7 +9,9 @@ export default function ForgotPassword() {
   // (opcional) marcar el body para estilos “scoped” por página
   useEffect(() => {
     document.body.dataset.page = "forgot";
-    return () => { delete document.body.dataset.page; };
+    return () => {
+      delete document.body.dataset.page;
+    };
   }, []);
 
   const [email, setEmail] = useState("");
@@ -17,7 +21,7 @@ export default function ForgotPassword() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    if (!email) return;
+    if (!email || sending) return;
 
     setSending(true);
     setStatus(null);
@@ -72,13 +76,16 @@ export default function ForgotPassword() {
 
         {/* Card del formulario */}
         <section
-          className={`
+          className="
             bg-black/40 backdrop-blur-md rounded-2xl border border-white/10
             shadow-[0_18px_60px_rgba(0,0,0,.45)] p-6 sm:p-8
-          `}
+          "
         >
           <form onSubmit={onSubmit} className="space-y-5">
-            <label htmlFor="fp-email" className="block text-sm uppercase tracking-widest text-white/70">
+            <label
+              htmlFor="fp-email"
+              className="block text-sm uppercase tracking-widest text-white/70"
+            >
               Correo electrónico
             </label>
             <input
@@ -126,14 +133,14 @@ export default function ForgotPassword() {
             </div>
           )}
 
-          {/* Enlaces secundarios */}
+          {/* Enlaces secundarios (SPA, sin recargar) */}
           <div className="mt-6 flex items-center justify-between text-sm">
-            <a href="/signin" className="text-white/80 hover:text-white transition">
+            <Link to="/signin" className="text-white/80 hover:text-white transition">
               Volver a iniciar sesión
-            </a>
-            <a href="/signup" className="text-white/80 hover:text-white transition">
+            </Link>
+            <Link to="/signup" className="text-white/80 hover:text-white transition">
               Crear cuenta
-            </a>
+            </Link>
           </div>
         </section>
       </main>

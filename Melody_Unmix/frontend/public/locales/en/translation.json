@@ -1,0 +1,160 @@
+{
+    "nav": {
+      "home": "Home",
+      "about": "About",
+      "signin": "Sign in",
+      "signup": "Sign up",
+      "logout": "Log out",
+      "my_files": "My files"
+    },
+  
+    "common": {
+      "loading": "Loading...",
+      "processing": "Processing…",
+      "processed": "Processed",
+      "error": "Error",
+      "unknown": "Unknown",
+      "back": "Back",
+      "go_to_files": "Go to my files",
+      "confirm": "Confirm",
+      "cancel": "Cancel"
+    },
+  
+    "home": {
+      "hero_title": "The ultimate AI platform for musicians",
+      "hero_sub": "Melody Unmix is the AI toolkit for musicians of every style: separate stems, practice with your favorite songs, and collaborate with your team. Built by and for musicians.",
+      "cta_signin": "Sign in",
+      "cta_signup": "Create account",
+      "cta_gofiles": "Go to my files",
+      "bullets": {
+        "stems_title": "Stem separation",
+        "stems_desc": "Vocals, drums, bass, others—in minutes.",
+        "flow_title": "Simple workflow",
+        "flow_desc": "Upload, wait, and download. No fuss.",
+        "for_musicians_title": "For musicians",
+        "for_musicians_desc": "Tools built by and for creators."
+      },
+      "api": {
+        "ping_title": "Welcome to the MelodyUnmix API",
+        "status": "Status",
+        "database": "Database",
+        "mongo": "Mongo"
+      }
+    },
+  
+    "header": {
+      "signin_signup": "Sign In / Sign Up",
+      "hello_user": "Hi, {{username}}",
+      "menu": {
+        "profile": "My profile",
+        "files": "My files",
+        "logout": "Log out"
+      }
+    },
+  
+    "features": {
+      "title": "With advanced AI, split any song into:",
+      "stems": {
+        "vocals": "Vocals",
+        "drums": "Drums",
+        "guitar": "Guitar",
+        "bass": "Bass",
+        "other": "Others"
+      }
+    },
+  
+    "signin": {
+      "title": "Melody Unmix",
+      "subtitle": "Sign in to continue",
+      "email": "Email",
+      "password": "Password",
+      "remember": "Remember me",
+      "forgot": "I forgot my password",
+      "submit": "Sign in",
+      "no_account": "Don't have an account?",
+      "go_signup": "Create one",
+      "invalid_credentials": "Invalid email or password."
+    },
+  
+    "signup": {
+      "title": "Create account",
+      "subtitle": "Join Melody Unmix in seconds",
+      "first_name": "First name",
+      "last_name_p": "Last name",
+      "last_name_m": "Second last name",
+      "username": "Username",
+      "email": "Email",
+      "password": "Password",
+      "password_confirm": "Confirm password",
+      "password_hint": "At least 8 characters, include uppercase, number, and special character.",
+      "submit": "Sign up",
+      "have_account": "Already have an account?",
+      "go_signin": "Sign in",
+      "password_mismatch": "Passwords do not match"
+    },
+  
+    "forgot": {
+      "title": "Forgot your password?",
+      "subtitle": "We'll send you a link to reset it.",
+      "email": "Email",
+      "submit": "Send link",
+      "ok": "If the email exists, we sent a reset link.",
+      "err": "We couldn't send the email. Try again in a few minutes.",
+      "back_signin": "Back to sign in",
+      "go_signup": "Create account"
+    },
+  
+    "userscreen": {
+      "title": "Start testing our AI",
+      "subtitle": "Upload your file now",
+      "upload": "Upload file",
+      "uploading": "Uploading...",
+      "table": {
+        "title": "Title",
+        "duration": "Duration",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "empty": "You haven't uploaded any files yet.",
+      "only_mp3_wav": "Only MP3 or WAV files are allowed.",
+      "delete_confirm": "Delete this audio permanently?",
+      "delete": "Delete",
+      "downloaddetail": "Download",
+      "go_detail": "View downloads",
+      "status": {
+        "uploading": "Uploading…",
+        "processing": "Processing…",
+        "processed": "Processed",
+        "error": "Upload error"
+      }
+    },
+  
+    "uploaded": {
+      "title_fallback": "Your song",
+      "ready": "Your song is ready — choose what to download.",
+      "pending": "We are preparing your stems…",
+      "badges": {
+        "ready": "Ready",
+        "processing": "Processing…",
+        "error": "Error"
+      },
+      "stems": {
+        "vocals": "Vocals",
+        "drums": "Drums",
+        "guitar": "Guitar",
+        "bass": "Bass",
+        "other": "Others",
+        "all": "Download All"
+      },
+      "errors": {
+        "unauthorized": "Your session expired. Please sign in again.",
+        "not_found": "We couldn't find this audio or it doesn't belong to you.",
+        "download_failed": "Couldn't download this stem. Check its availability."
+      },
+      "actions": {
+        "back": "Back",
+        "to_files": "Go to my files"
+      }
+    }
+  }
+  

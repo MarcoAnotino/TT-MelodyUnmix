@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+
 /* Fuentes Mazzard */
 @font-face {
   font-family: 'Mazzard-MRegular';
@@ -151,4 +152,13 @@ img[alt^="Ellipse"],
 img.anima-ellipse,
 .anima-ellipse{
   display: none !important;
+}
+
+/* --- Fail-safe para ScrollReveal --- */
+html:not(.sr-ready) main,
+html:not(.sr-ready) section,
+html:not(.sr-ready) header.sticky {
+  opacity: 1 !important;
+  transform: none !important;
+  visibility: visible !important;
 }

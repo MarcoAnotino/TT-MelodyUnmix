@@ -14,8 +14,9 @@ class Usuario(AbstractUser):
         choices=Roles.choices,
         default=Roles.USER,
     )
-
     fecha_registro = models.DateTimeField(auto_now_add=True)
+
+    email = models.EmailField(unique=True)
 
     def __str__(self):
         return self.username

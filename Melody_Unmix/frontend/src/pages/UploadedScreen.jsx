@@ -1,152 +1,173 @@
+// src/pages/UploadedScreen.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import Header from "../components/Header";
+import { api } from "../lib/api";
 
-// Manejo de errores: Modulo reutilizable
-import ErrorModal from "../components/ErrorModal.jsx";
-
-// Assets 
+// Assets
 import image1 from "../assets/images/image-1.png"; // Voz
-import image2 from "../assets/images/image-2.png"; // Bateria
+import image2 from "../assets/images/image-2.png"; // Batería
 import image3 from "../assets/images/image-3.png"; // Guitarra
 import image4 from "../assets/images/image-4.png"; // Bajo
 import image7 from "../assets/images/image-7.png"; // Otros
 import image6 from "../assets/images/image-6.png"; // Download All
-import logo from "../assets/images/logoapp-1.png";
 
 const STEMS = [
-  { key: "vocals",  label: "Voz",       img: image1 },
-  { key: "drums",   label: "Bateria",   img: image2 },
-  { key: "guitar",  label: "Guitarra",  img: image3 },
-  { key: "bass",    label: "Bajo",      img: image4 },
-  { key: "other",   label: "Otros",     img: image7 },
+  { key: "vocals", label: "Voz", img: image1 },
+  { key: "drums",  label: "Batería", img: image2 },
+  { key: "guitar", label: "Guitarra", img: image3 }, // según tu modelo, puede no existir
+  { key: "bass",   label: "Bajo", img: image4 },
+  { key: "other",  label: "Otros", img: image7 },
 ];
 
-const API = process.env.REACT_APP_API_BASE_URL || "";
+const normalizeStatus = (raw) => {
+  const s = String(raw || "").toLowerCase();
+  if (s.includes("procesado") || s === "processed") return "procesado";
+  if (s.includes("error")) return "error";
+  return "procesando";
+};
 
 export default function UploadedScreen() {
-  const { id } = useParams();                 // /tracks/:id
+  const { id } = useParams(); // pensado para /tracks/:id
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Si vienes desde la tabla puedes mandar { state: { title } }
-  // Todavia esto esta en desarrollo es mero ejemplo
   const initialTitle = location.state?.title || "Tu canción";
   const [title, setTitle] = useState(initialTitle);
-  const [status, setStatus] = useState("running"); // queued | running | processed | error
+  const [status, setStatus] = useState("procesando"); // procesando | procesado | error
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null); // { title, message, variant }
-  const isReady = status === "processed";
+  const [error, setError] = useState("");
+
+  const isReady = status === "procesado";
 
   const statusBadge = useMemo(() => {
     const base = "px-3 py-1 rounded-full text-sm";
-    if (status === "processed") return <span className={`${base} bg-emerald-500/20 text-emerald-300`}>Listo</span>;
-    if (status === "running" || status === "queued") return <span className={`${base} bg-yellow-500/20 text-yellow-300`}>Procesando…</span>;
-    return <span className={`${base} bg-rose-500/20 text-rose-300`}>Error</span>;
+    if (status === "procesado")
+      return (
+        <span className={`${base} bg-emerald-500/20 text-emerald-300`}>
+          Listo
+        </span>
+      );
+    if (status === "procesando")
+      return (
+        <span className={`${base} bg-yellow-500/20 text-yellow-300`}>
+          Procesando…
+        </span>
+      );
+    return (
+      <span className={`${base} bg-rose-500/20 text-rose-300`}>Error</span>
+    );
   }, [status]);
 
-  // Polling con manejo de errores
+  // Redirige si falta id
   useEffect(() => {
-    let timer;
-    let failures = 0;
+    if (!id) navigate("/app", { replace: true });
+  }, [id, navigate]);
 
-    const fetchStatus = async () => {
+  // Polling inteligente (pausa en fondo y backoff); se detiene en listo/error/401/404
+  useEffect(() => {
+    if (!id) return;
+    let alive = true;
+    let delay = 3000;
+    let timer;
+
+    const tick = async () => {
+      if (!alive) return;
+      if (document.hidden) {
+        timer = setTimeout(tick, delay);
+        return;
+      }
       try {
-        const res = await fetch(`${API}/api/audios/${id}/status`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        setStatus(data.status || "running");
-        if (data.title) setTitle(data.title);
-        failures = 0; // reinicia en éxito
-      } catch (e) {
-        failures += 1;
-        if (failures >= 3 && !error) {
-          setError({
-            title: "Error en la petición",
-            message:
-              "Tuvimos problemas al consultar el estado del procesamiento. Revisa tu conexión o intenta más tarde.",
-            variant: "brand",
-          });
+        const { data } = await api.get(`/api/audios/${id}/status`);
+        setStatus(normalizeStatus(data?.status));
+        if (data?.title) setTitle(data.title);
+        setError("");
+
+        if (["procesado", "error"].includes(normalizeStatus(data?.status))) {
+          alive = false;
+          return;
         }
+        delay = 3000; // reset backoff si ok
+      } catch (e) {
+        const code = e?.response?.status;
+        if (code === 401) {
+          setError("Tu sesión expiró. Inicia sesión de nuevo.");
+          alive = false;
+          return;
+        }
+        if (code === 404) {
+          setError("No encontramos este audio o no te pertenece.");
+          alive = false;
+          return;
+        }
+        delay = Math.min(delay + 3000, 15000); // backoff
       } finally {
-        timer = setTimeout(fetchStatus, 3000);
+        if (alive) timer = setTimeout(tick, delay);
       }
     };
-    fetchStatus();
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    tick();
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
   }, [id]);
 
-  // Verifica antes de descargar para capturar errores
+  // Descarga usando api (incluye Authorization)
+  // src/pages/UploadedScreen.jsx (dentro de handleDownload)
   const handleDownload = async (stemKey) => {
     setLoading(true);
     try {
-      // Ideal: endpoint HEAD que devuelva 2xx si el archivo está listo
-      const check = await fetch(`${API}/api/audios/${id}/download/${stemKey}`, {
-        method: "HEAD",
+      const res = await api.get(`/api/audios/${id}/download/${stemKey}`, {
+        responseType: "blob",
       });
 
-      if (!check.ok) {
-        let message = "Por el momento no se pudo preparar la descarga de este stem.";
-        try {
-          const j = await fetch(`${API}/api/audios/${id}/download/${stemKey}`, {
-            headers: { Accept: "application/json" },
-          });
-          if (j.ok) {
-            const data = await j.json();
-            message = data?.message || message;
-          }
-        } catch {}
-        throw new Error(message);
+      // 1) intenta usar el nombre del header
+      const dispo = res.headers["content-disposition"] || "";
+      let filename;
+      const m = dispo.match(/filename\*=UTF-8''([^;]+)|filename="?([^"]+)"?/i);
+      if (m) {
+        filename = decodeURIComponent(m[1] || m[2]);
+      } else {
+        // 2) fallback por tipo de contenido y stem
+        const ct = (res.headers["content-type"] || "").toLowerCase();
+        const isZip = ct.includes("zip") || stemKey === "all";
+        const ext = isZip ? "zip" : "wav";
+        filename = `${(title || "audio").replace(/\s+/g, "_")}-${stemKey}.${ext}`;
       }
 
-      // Dispara la descarga real
-      window.location.href = `${API}/api/audios/${id}/download/${stemKey}`;
-    } catch (err) {
-      setError({
-        title: "Error en la petición",
-        message:
-          err?.message ||
-          "Lo sentimos, por el momento presentamos fallas técnicas en nuestro servicio.",
-        variant: "brand",
-      });
+      const blobUrl = URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      alert("No se pudo descargar este archivo. Verifica que está disponible.");
     } finally {
-      setTimeout(() => setLoading(false), 600); // feedback rápido
+      setTimeout(() => setLoading(false), 500);
     }
   };
 
+
   return (
     <div className="min-h-screen w-full bg-[linear-gradient(180deg,rgba(51,60,78,1)_3%,rgba(37,42,52,1)_49%,rgba(21,21,22,1)_95%)] text-white">
-      {/* Top bar */}
-      <header className="w-full flex justify-center pt-6">
-        <div className="w-full max-w-[1065px] h-[60px] bg-black rounded-[27px] px-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src={logo} alt="logo" className="w-[45px] h-[37px]" />
-          </div>
-          <nav className="hidden sm:flex items-center gap-16">
-            <button onClick={() => navigate("/")} className="text-white text-lg">Home</button>
-            <a href="/about" className="text-white text-lg">About</a>
-          </nav>
-          <div className="bg-[#0c0c0c] rounded-full px-4 py-2 flex items-center gap-2">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z" fill="#9AE6B4"/>
-            </svg>
-            <span className="text-sm sm:text-base">Hola, Usuario!</span>
-          </div>
-        </div>
-      </header>
+      <Header />
 
-      {/* Título */}
       <section className="max-w-5xl mx-auto mt-16 px-6">
         <div className="flex items-center gap-4 flex-wrap">
           <h1 className="text-3xl sm:text-5xl">{title}</h1>
           {statusBadge}
         </div>
         <p className="text-[#e7e7e7] text-xl sm:text-2xl mt-3">
-          Tu cancion esta lista, elige que quieres descargar.
+          {isReady
+            ? "Tu canción está lista, elige qué quieres descargar."
+            : "Estamos preparando tus pistas…"}
         </p>
       </section>
 
-      {/* Grid de descargas */}
       <main className="max-w-5xl mx-auto mt-12 px-6 pb-24">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-16 gap-y-14 place-items-center">
           {STEMS.map((s) => (
@@ -154,11 +175,15 @@ export default function UploadedScreen() {
               <button
                 disabled={!isReady || loading}
                 onClick={() => handleDownload(s.key)}
-                className={`rounded-full p-2 transition-transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed`}
+                className="rounded-full p-2 transition-transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label={`Descargar ${s.label}`}
                 title={isReady ? `Descargar ${s.label}` : "Procesando..."}
               >
-                <img src={s.img} alt={s.label} className="w-[196px] h-[196px] object-cover" />
+                <img
+                  src={s.img}
+                  alt={s.label}
+                  className="w-[196px] h-[196px] object-cover"
+                />
               </button>
               <span className="mt-4 text-2xl">{s.label}</span>
             </div>
@@ -173,13 +198,16 @@ export default function UploadedScreen() {
               aria-label="Descargar todos"
               title={isReady ? "Descargar todos" : "Procesando..."}
             >
-              <img src={image6} alt="Download All" className="w-[196px] h-[196px] object-cover" />
+              <img
+                src={image6}
+                alt="Download All"
+                className="w-[196px] h-[196px] object-cover"
+              />
             </button>
             <span className="mt-4 text-2xl">Download All</span>
           </div>
         </div>
 
-        {/* Acciones secundarias */}
         <div className="mt-16 flex justify-center gap-4">
           <button
             onClick={() => navigate(-1)}
@@ -194,16 +222,18 @@ export default function UploadedScreen() {
             Ir a mis archivos
           </button>
         </div>
-      </main>
 
-      {/* Modal de error (backend / descarga) */}
-      <ErrorModal
-        open={!!error}
-        title={error?.title}
-        message={error?.message}
-        variant={error?.variant || "brand"}
-        onClose={() => setError(null)}
-      />
+        {error && (
+          <div className="max-w-5xl mx-auto mt-4 px-6">
+            <div className="px-4 py-3 rounded-lg bg-rose-500/15 text-rose-300 border border-rose-400/20">
+              {error}{" "}
+              <button className="underline ml-2" onClick={() => navigate("/app")}>
+                Volver a mis archivos
+              </button>
+            </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 }

@@ -1,11 +1,51 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, permissions
 from .services import guardar_audio, agregar_pista, obtener_audio
 from .models import ProcesamientoAudio, ArchivoAudio, PistaSeparada
 from .demucs_service import ejecutar_demucs
+from django.http import JsonResponse, FileResponse, Http404
+from django.shortcuts import get_object_or_404
+from .services import get_collection
+import zipfile
+import time 
 import os
 
+
+# -----------------
+# Audios Subidos
+# -----------------
+
+class MyUploadsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        """
+        GET /api/audios/mine/
+        Lista de archivos subidos por el usuario autenticado (PostgreSQL).
+        """
+        user = request.user
+        qs = (
+            ArchivoAudio.objects
+            .select_related("audio_in")
+            .filter(usuario=user)
+            .order_by("-audio_in__fecha_procesamiento")
+        )
+
+        results = []
+        for a in qs:
+            ai = a.audio_in
+            results.append({
+                "audio_id": ai.id,
+                "nombre_audio": ai.nombre_audio,
+                "estado": ai.estado,  # "procesando" | "procesado" | "error"
+                "formato": ai.formato,
+                "duracion": ai.duracion,  # segundos (int o null)
+                "tamano_mb": float(ai.tamano_mb) if ai.tamano_mb is not None else None,
+                "fecha_procesamiento": ai.fecha_procesamiento,
+                "pistas_count": a.pistas.count(),
+            })
+        return Response({"results": results})
 
 # -----------------
 # Subida de audio
@@ -205,3 +245,178 @@ class ObtenerAudioPostgresView(APIView):
                 "pistas": pistas_pg,
             }
         }, status=200)
+
+class AudioStatusView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, audio_id):
+        audio = get_object_or_404(ProcesamientoAudio, id=audio_id)
+        # puedes validar propiedad vía ArchivoAudio + request.user si quieres
+        return Response({
+            "id": audio.id,
+            "status": audio.estado,   # "procesando" | "procesado" | "error"
+            "title": audio.nombre_audio,
+        }, status=200)
+
+# MelodyUnmixApp/audios/views.py (añade)
+class DownloadStemView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, audio_id, stem):
+        """
+        GET /api/audios/<audio_id>/download/<stem>
+        - <stem> puede ser 'vocals', 'drums', 'bass', 'other' o 'all'
+        Requiere que el audio pertenezca al usuario autenticado.
+        """
+        # 1) Validar que el audio le pertenece al usuario
+        try:
+            archivo = ArchivoAudio.objects.select_related("audio_in").get(
+                audio_in__id=audio_id,
+                usuario=request.user
+            )
+        except ArchivoAudio.DoesNotExist:
+            # No revelar existencia de IDs ajenos
+            raise Http404("No autorizado o no existe")
+
+        # 2) Caso "all": crear/servir ZIP con todos los stems disponibles
+        if stem == "all":
+            pistas = list(archivo.pistas.all())
+            if not pistas:
+                raise Http404("No hay pistas disponibles para este audio.")
+
+            # Verificar qué archivos existen físicamente
+            existentes = []
+            newest_src_mtime = 0.0
+            for p in pistas:
+                if p.ruta_pista_out and os.path.exists(p.ruta_pista_out):
+                    existentes.append(p)
+                    newest_src_mtime = max(newest_src_mtime, os.path.getmtime(p.ruta_pista_out))
+
+            if not existentes:
+                raise Http404("Pistas no disponibles en el almacenamiento.")
+
+            # Construir ruta del ZIP (en la misma carpeta del primer stem)
+            # Nombre: <nombre_sin_ext>_stems.zip
+            base_name = os.path.splitext(archivo.audio_in.nombre_audio)[0]
+            first_dir = os.path.dirname(existentes[0].ruta_pista_out)
+            zip_path = os.path.join(first_dir, f"{base_name}_stems.zip")
+
+            # Reusar si existe y está actualizado (más nuevo que cualquier stem)
+            need_rebuild = True
+            if os.path.exists(zip_path):
+                zip_mtime = os.path.getmtime(zip_path)
+                # Si el zip es más nuevo que la pista más reciente, no reconstruimos
+                if zip_mtime >= newest_src_mtime:
+                    need_rebuild = False
+
+            # (Re) construir zip si hace falta
+            if need_rebuild:
+                # Asegura directorio
+                os.makedirs(first_dir, exist_ok=True)
+                # Crear ZIP
+                tmp_zip_path = f"{zip_path}.tmp"
+                with zipfile.ZipFile(tmp_zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+                    # Guardar cada pista con nombre readable: <instrumento>.wav (o el filename real)
+                    for p in existentes:
+                        src = p.ruta_pista_out
+                        if not src or not os.path.exists(src):
+                            continue
+                        # arcname legible
+                        ext = os.path.splitext(src)[1].lower() or ".wav"
+                        inst = (p.instrumento or "stem").lower()
+                        arcname = f"{inst}{ext}"
+                        # Evitar duplicados (p.ej. dos 'other')
+                        i = 1
+                        base_arc = arcname
+                        while True:
+                            try:
+                                # zipfile no expone conflicto hasta escribir; lo evitamos manual
+                                if arcname in zf.namelist():
+                                    i += 1
+                                    arcname = f"{inst}_{i}{ext}"
+                                    continue
+                                break
+                            except Exception:
+                                break
+                        zf.write(src, arcname=arcname)
+
+                # Movimiento atómico del tmp -> definitivo
+                if os.path.exists(tmp_zip_path):
+                    # En Windows es mejor quitar antes; en Linux overwrite funciona con replace
+                    try:
+                        if os.path.exists(zip_path):
+                            os.remove(zip_path)
+                    except Exception:
+                        pass
+                    os.replace(tmp_zip_path, zip_path)
+                    # Opcional: ajustar mtime al más nuevo de los stems
+                    try:
+                        os.utime(zip_path, (time.time(), newest_src_mtime))
+                    except Exception:
+                        pass
+
+            # 3) Servir ZIP
+            if not os.path.exists(zip_path):
+                raise Http404("No se pudo generar el paquete de pistas.")
+            return FileResponse(
+                open(zip_path, "rb"),
+                as_attachment=True,
+                filename=os.path.basename(zip_path),
+                content_type="application/zip",
+            )
+
+        # 4) Caso: un solo stem (vocals/drums/bass/other…)
+        pista = archivo.pistas.filter(instrumento=stem).first()
+        if not pista or not pista.ruta_pista_out or not os.path.exists(pista.ruta_pista_out):
+            raise Http404("Pista no disponible")
+
+        return FileResponse(
+            open(pista.ruta_pista_out, "rb"),
+            as_attachment=True,
+            filename=os.path.basename(pista.ruta_pista_out),
+        )
+# -----------------
+# Eliminar audio
+# -----------------
+
+def safe_rm(path):
+    try:
+        if path and os.path.exists(path):
+            os.remove(path)
+    except Exception as e:
+        print("No se pudo borrar", path, e)
+
+class DeleteAudioView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, audio_id):
+        """
+        DELETE /api/audios/<audio_id>/
+        Elimina por completo un audio del usuario autenticado:
+        - registros en Postgres
+        - archivos físicos
+        - documento en Mongo
+        """
+        # 1) localizar por dueño + id postgres
+        archivo = get_object_or_404(ArchivoAudio, audio_in__id=audio_id, usuario=request.user)
+        ai = archivo.audio_in
+
+        # 2) borrar archivos físicos
+        safe_rm(ai.ruta_almacenamiento_in)
+        for pista in archivo.pistas.all():
+            safe_rm(pista.ruta_pista_out)
+
+        # 3) borrar en Mongo (si guardas mongo_id es mejor; ver nota abajo)
+        col = get_collection()
+        col.delete_many({
+            "usuario_id": str(request.user.id),
+            "nombre_archivo": ai.nombre_audio
+            # o "url_archivo": ai.ruta_almacenamiento_in
+        })
+
+        # 4) borrar objetos de DB
+        PistaSeparada.objects.filter(archivos=archivo).delete()
+        archivo.delete()
+        ai.delete()
+
+        return Response({"deleted": True})
