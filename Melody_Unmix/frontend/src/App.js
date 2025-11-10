@@ -10,6 +10,7 @@ import UploadedScreen from "./pages/UploadedScreen";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import ForgotPassword from "./pages/ForgotPassword";
+import About from "./pages/About";
 
 /**
  * AppLayout:
@@ -86,6 +87,7 @@ export default function App() {
 
           {/* Auth */}
           <Route path="/signin" element={<SignIn />} />
+          <Route path="/about" element={<About />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
 
