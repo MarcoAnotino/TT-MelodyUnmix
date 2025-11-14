@@ -131,3 +131,25 @@ export async function me() {
   const { data } = await api.get("/api/users/me/");
   return data;
 }
+
+// ---------- Endpoints de Reseteo de contraseña ----------
+// Solicitar envío del código (ya lo llamas en ForgotPassword)
+export async function requestPasswordReset(email) {
+  const { data } = await api.post("/api/users/auth/password-reset/", { email });
+  return data; // { found: true, status: "message" } 
+}
+
+// Verificar el código de 6 bloques: retorna uid y token
+export async function verifyResetCode({ email, code }) {
+  const { data } = await api.post("/api/users/auth/password-reset/verify/", { email, code });
+  return data; // { uid, token }
+}
+
+// Confirmar reseteo con uid + token + nueva contraseña
+export async function resetPasswordConfirm({ uid, token, new_password, re_new_password }) {
+  const { data } = await api.post("/api/users/auth/password-reset/confirm/", {
+    uid, token, new_password, re_new_password
+  });
+  return data; // { ok: true, message: ... }
+}
+

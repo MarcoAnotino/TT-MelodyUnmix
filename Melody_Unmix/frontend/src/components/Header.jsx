@@ -98,8 +98,9 @@ export default function Header() {
         {/* Links */}
         <nav aria-label="Primary" className="flex items-center gap-16">
           {!user && <NavLink to="/">Home</NavLink>}
-          <NavLink to="/about">About</NavLink>
+          {!user && <NavLink to="/about">About</NavLink>}
           {user && <NavLink to="/app">Mis archivos</NavLink>}
+          {user && <NavLink to="/profile">Mi perfil</NavLink>}
         </nav>
 
         {/* Derecha */}
@@ -142,26 +143,40 @@ export default function Header() {
             </button>
 
             {menuOpen && (
-              <div
-                role="menu"
-                className="absolute right-0 mt-2 w-44 rounded-xl bg-[#0c0c0c] ring-1 ring-white/10 shadow-xl overflow-hidden"
-              >
-                <button
-                  onClick={() => { setMenuOpen(false); navigate("/app"); }}
-                  className="w-full text-left px-4 py-2.5 text-white/90 hover:bg-white/5"
-                  role="menuitem"
-                >
-                  Mis archivos
-                </button>
-                <button
-                  onClick={onLogout}
-                  className="w-full text-left px-4 py-2.5 text-red-300 hover:bg-white/5"
-                  role="menuitem"
-                >
-                  Cerrar sesión
-                </button>
-              </div>
-            )}
+  <div
+    role="menu"
+    className="absolute right-0 mt-2 w-44 rounded-xl bg-[#0c0c0c] ring-1 ring-white/10 shadow-xl overflow-hidden"
+  >
+    <button
+      onClick={() => {
+        setMenuOpen(false);
+        navigate("/profile");
+      }}
+      className="w-full text-left px-4 py-2.5 text-white/90 hover:bg-white/5"
+      role="menuitem"
+    >
+      Perfil
+    </button>
+    <button
+      onClick={() => {
+        setMenuOpen(false);
+        navigate("/app");
+      }}
+      className="w-full text-left px-4 py-2.5 text-white/90 hover:bg:white/5"
+      role="menuitem"
+    >
+      Mis archivos
+    </button>
+    <button
+      onClick={onLogout}
+      className="w-full text-left px-4 py-2.5 text-red-300 hover:bg:white/5"
+      role="menuitem"
+    >
+      Cerrar sesión
+    </button>
+  </div>
+)}
+
           </div>
         )}
       </div>

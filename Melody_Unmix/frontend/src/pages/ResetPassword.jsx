@@ -2,17 +2,22 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Header from "../components/Header";
+import PasswordToggleButton from "../components/PasswordToggleButton";
+import { resetPasswordConfirm } from "../lib/api";
 
-const API = process.env.REACT_APP_API_BASE_URL || "";
-
-const isValidUID = (u) => /^[0-9]{6}$/.test(u || "");
-const validatePassword = (pw) => {
-  const ok = !!pw && pw.length >= 8 && /\d/.test(pw) && /[A-Za-z]/.test(pw);
-  return { ok, message: "Mínimo 8 caracteres, incluye letras y números." };
+// Reglas de la contraseña (mismas que SignUp)
+const PWD_RULES = {
+  length: { test: (v) => v.length >= 8, label: "Mínimo 8 caracteres" },
+  upper: { test: (v) => /[A-Z]/.test(v), label: "Al menos 1 mayúscula (A-Z)" },
+  number: { test: (v) => /[0-9]/.test(v), label: "Al menos 1 número (0-9)" },
+  special: {
+    test: (v) => /[^A-Za-z0-9]/.test(v),
+    label: "Al menos 1 caracter especial",
+  },
 };
 
 export default function ResetPassword() {
-  const { uid } = useParams();
+  const { uid, token } = useParams();
   const navigate = useNavigate();
 
   const [pw1, setPw1] = useState("");
@@ -22,21 +27,43 @@ export default function ResetPassword() {
   const [status, setStatus] = useState(null); // "ok" | "error" | null
   const [msg, setMsg] = useState("");
 
-  const uidOk = useMemo(() => isValidUID(uid), [uid]);
+  // uid + token deben existir
+  const uidOk = useMemo(() => !!uid && !!token, [uid, token]);
+
+  // Validaciones de contraseña (igual que en SignUp)
+  const pwdChecks = useMemo(() => {
+    const v = pw1 || "";
+    return {
+      length: PWD_RULES.length.test(v),
+      upper: PWD_RULES.upper.test(v),
+      number: PWD_RULES.number.test(v),
+      special: PWD_RULES.special.test(v),
+    };
+  }, [pw1]);
+
+  const isPwdValid =
+    pwdChecks.length &&
+    pwdChecks.upper &&
+    pwdChecks.number &&
+    pwdChecks.special;
+
+  const passwordsMatch = pw1.length > 0 && pw2.length > 0 ? pw1 === pw2 : true;
 
   const onSubmit = async (e) => {
     e.preventDefault();
+
     if (!uidOk) {
       setStatus("error");
-      setMsg("Enlace inválido o expirado. Solicita un nuevo correo.");
+      setMsg("El enlace es inválido o ha expirado. Solicita un nuevo código.");
       return;
     }
-    const v = validatePassword(pw1);
-    if (!v.ok) {
+
+    if (!isPwdValid) {
       setStatus("error");
-      setMsg(v.message);
+      setMsg("La contraseña no cumple con los requisitos.");
       return;
     }
+
     if (pw1 !== pw2) {
       setStatus("error");
       setMsg("Las contraseñas no coinciden.");
@@ -48,26 +75,23 @@ export default function ResetPassword() {
     setMsg("");
 
     try {
-      // Ajusta este endpoint a tu backend (PATCH/POST según tu API)
-      const res = await fetch(`${API}/api/auth/password-reset/${uid}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: pw1 }),
+      const data = await resetPasswordConfirm({
+        uid,
+        token,
+        new_password: pw1,
+        re_new_password: pw2,
       });
 
-      if (!res.ok) {
-        let message = "No pudimos restablecer tu contraseña.";
-        try {
-          const data = await res.json();
-          message = data?.detail || data?.message || message;
-        } catch {}
-        throw new Error(message);
+      if (!data?.ok) {
+        throw new Error(
+          data?.message || "No pudimos restablecer tu contraseña."
+        );
       }
 
       setStatus("ok");
       setMsg("¡Listo! Tu contraseña fue actualizada.");
-      // Redirige tras 1.2s
-      setTimeout(() => navigate("/reset-success", { replace: true }), 1200);
+      // OJO: aquí navegamos a /reset-done (coincide con App.js)
+      setTimeout(() => navigate("/reset-done", { replace: true }), 1200);
     } catch (err) {
       setStatus("error");
       setMsg(err?.message || "Error inesperado. Inténtalo más tarde.");
@@ -93,7 +117,7 @@ export default function ResetPassword() {
 
         {!uidOk && (
           <div className="mb-6 rounded-xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-rose-200">
-            El enlace es inválido o ha expirado. Solicita un nuevo correo.
+            El enlace es inválido o ha expirado. Solicita un nuevo código.
           </div>
         )}
 
@@ -111,35 +135,63 @@ export default function ResetPassword() {
                   minLength={8}
                   required
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPw((s) => !s)}
-                  className="ml-3 text-white/75 hover:text-white text-sm"
-                >
-                  {showPw ? "Ocultar" : "Ver"}
-                </button>
+                <PasswordToggleButton
+                  visible={showPw}
+                  onToggle={() => setShowPw((s) => !s)}
+                  disabled={sending}
+                  error={false}
+                  className="ml-3"
+                />
               </div>
-              <span className="mt-1 block text-xs text-white/60">
-                Mínimo 8 caracteres, incluye letras y números.
-              </span>
             </label>
+
+            {/* Checklist de requisitos */}
+            <div className="mt-2 space-y-1 text-xs" aria-live="polite">
+              {Object.entries(PWD_RULES).map(([key, rule]) => {
+                const ok = pwdChecks[key];
+                return (
+                  <div
+                    key={key}
+                    className={`flex items-center gap-2 ${
+                      ok ? "text-green-300" : "text-white/70"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-3 w-3 rounded-full ${
+                        ok ? "bg-green-300" : "bg-white/30"
+                      }`}
+                    ></span>
+                    <span>{rule.label}</span>
+                  </div>
+                );
+              })}
+            </div>
 
             <label className="block text-sm text-white/90">
               Confirmar contraseña
               <input
                 type={showPw ? "text" : "password"}
-                className="mt-2 w-full rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-base md:text-lg outline-none placeholder:text-white/40 focus:ring-2 focus:ring-teal-300/50"
+                className={`mt-2 w-full rounded-xl bg-white/10 border px-3 py-2 text-base md:text-lg outline-none placeholder:text-white/40 focus:ring-2 focus:ring-teal-300/50 ${
+                  !passwordsMatch && pw2.length > 0
+                    ? "border-rose-400"
+                    : "border-white/10"
+                }`}
                 placeholder="••••••••"
                 value={pw2}
                 onChange={(e) => setPw2(e.target.value)}
                 minLength={8}
                 required
               />
+              {!passwordsMatch && pw2.length > 0 && (
+                <p className="mt-1 text-sm text-rose-300" aria-live="polite">
+                  Las contraseñas no coinciden.
+                </p>
+              )}
             </label>
 
             <button
               type="submit"
-              disabled={!uidOk || sending}
+              disabled={!uidOk || sending || !isPwdValid || !passwordsMatch}
               className="mt-2 inline-flex items-center justify-center w-full h-12 rounded-xl bg-[#08D9D6] text-[#141516] font-mazzard-m-semi-bold text-lg hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition"
             >
               {sending ? "Actualizando..." : "Cambiar contraseña"}
@@ -159,15 +211,6 @@ export default function ResetPassword() {
               )}
             </div>
           )}
-
-          <div className="mt-6 flex items-center justify-between text-sm">
-            <a href="/signin" className="text-white/80 hover:text-white transition">
-              Volver a iniciar sesión
-            </a>
-            <a href="/forgot-password" className="text-white/80 hover:text-white transition">
-              Reenviar enlace
-            </a>
-          </div>
         </section>
       </main>
     </div>

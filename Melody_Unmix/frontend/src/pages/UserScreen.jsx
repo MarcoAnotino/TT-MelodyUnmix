@@ -13,6 +13,32 @@ function formatSecondsToMSS(sec) {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+/** Quita la extensión de un nombre de archivo */
+function stripExtension(name = "") {
+  return name.replace(/\.[^/.]+$/, "");
+}
+
+/** Formatea fecha a algo legible */
+function formatDateTime(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return d.toLocaleString("es-MX", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+/** Formatea MB a cadena corta */
+function formatMB(mb) {
+  if (mb == null) return "—";
+  const num = typeof mb === "number" ? mb : Number(mb);
+  if (!Number.isFinite(num)) return "—";
+  return `${num.toFixed(2)} MB`;
+}
+
 /** Obtiene duración del audio con <audio> + ObjectURL */
 function getAudioDuration(file) {
   return new Promise((resolve) => {
@@ -66,14 +92,17 @@ export default function UserScreen() {
         const { data } = await api.get("/api/audios/mine/");
         const rowsLoaded = (data?.results || []).map((x) => ({
           id: x.audio_id,
-          titulo: x.nombre_audio,
+          titulo: stripExtension(x.nombre_audio || ""),
           duracion: x.duracion,
           estatus:
             String(x.estado || "").toLowerCase() === "procesado"
               ? "Procesado"
-              : String(x.estado || "") === "error"
+              : String(x.estado || "").toLowerCase() === "error"
               ? "Error"
               : "Procesando…",
+          tamano_mb: x.tamano_mb,
+          pistas_count: x.pistas_count ?? 0,
+          fecha_procesamiento: x.fecha_procesamiento,
         }));
         setRows(rowsLoaded);
         rowsLoaded
@@ -183,10 +212,11 @@ export default function UserScreen() {
     setUploading(true);
     const durationSec = await getAudioDuration(file);
     const tamanoMB = +(file.size / (1024 * 1024)).toFixed(2);
+    const baseTitle = stripExtension(name);
 
     const tempKey = `temp-${Date.now()}`;
     setRows((prev) => [
-      { id: tempKey, titulo: name, duracion: durationSec, estatus: "Subiendo…" },
+      { id: tempKey, titulo: baseTitle, duracion: durationSec, estatus: "Subiendo…" },
       ...prev,
     ]);
 
@@ -255,14 +285,21 @@ export default function UserScreen() {
   // Ir a la pantalla de descargas
   function handleGoToDownload(audioId, title) {
     if (!audioId) return;
-    // ajusta a tu ruta real: /tracks/:id o /UploadedScreen/:id
     navigate(`/tracks/${audioId}`, { state: { title } });
   }
+
+  const totalPistas = rows.reduce(
+    (acc, r) => acc + (r.pistas_count || 0),
+    0
+  );
+
+  const ultimoProcesado = rows[0]?.fecha_procesamiento;
 
   return (
     <div className="min-h-screen w-full bg-[linear-gradient(180deg,rgba(51,60,78,1)_3%,rgba(37,42,52,1)_49%,rgba(21,21,22,1)_95%)] text-white">
       <Header />
 
+      {/* Hero de subida */}
       <section className="w-full flex flex-col items-center mt-24 px-4">
         <h1 className="font-semibold text-3xl sm:text-4xl">
           Comienza a probar nuestra IA
@@ -288,82 +325,105 @@ export default function UserScreen() {
         />
       </section>
 
+      {/* Dashboard + lista */}
       <section className="w-full flex justify-center mt-20 pb-24 px-4">
-        <div className="w-full max-w-[1117px]">
-          <div
-            className="grid grid-cols-3 text-[#e3dddd] text-xl sm:text-2xl px-3 py-2"
-            role="row"
-          >
-            <div>Título</div>
-            <div>Duración</div>
-            <div className="text-right">Estatus</div>
+        <div className="w-full max-w-[1117px] space-y-6">
+          {/* Resumen */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+              <p className="text-sm text-white/60">Archivos subidos</p>
+              <p className="mt-2 text-3xl font-semibold">{rows.length}</p>
+            </div>
+            <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+              <p className="text-sm text-white/60">Pistas generadas</p>
+              <p className="mt-2 text-3xl font-semibold">{totalPistas}</p>
+            </div>
+            <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+              <p className="text-sm text-white/60">Último procesamiento</p>
+              <p className="mt-2 text-lg">
+                {ultimoProcesado ? formatDateTime(ultimoProcesado) : "—"}
+              </p>
+            </div>
           </div>
 
-          <div className="divide-y divide-white/10">
+          {/* Encabezado lista (solo desktop) */}
+          <div
+            className="hidden sm:grid grid-cols-[minmax(0,3fr)_minmax(0,1.2fr)_minmax(0,1.4fr)_auto] text-[#e3dddd] text-sm uppercase tracking-wide px-4 py-2"
+            role="row"
+          >
+            <div>Canción</div>
+            <div>Duración / Tamaño</div>
+            <div>Procesado</div>
+            <div className="text-right">Acciones</div>
+          </div>
+
+          {/* Lista */}
+          <div className="space-y-3">
             {rows.length === 0 ? (
-              <div className="px-3 py-6 text-white/70">
-                Aún no has subido archivos.
+              <div className="px-4 py-8 text-center text-white/70 rounded-2xl border border-dashed border-white/10">
+                Aún no has subido archivos. Sube tu primera canción para ver aquí el historial.
               </div>
             ) : (
               rows.map((row) => (
                 <div
                   key={row.id ?? `${row.titulo}-${row.estatus}`}
-                  className="grid grid-cols-3 items-center px-3 py-5 text-[#c5c5c5] text-xl"
+                  className="flex flex-col sm:grid sm:grid-cols-[minmax(0,3fr)_minmax(0,1.2fr)_minmax(0,1.4fr)_auto] gap-3 items-center px-4 py-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/[0.07] transition-colors"
                   role="row"
                 >
-                  <div className="truncate">{row.titulo}</div>
-                  <div>{formatSecondsToMSS(row.duracion)}</div>
+                  {/* Título + fecha */}
+                  <div className="w-full">
+                    <p className="truncate text-lg font-medium text-white">
+                      {row.titulo}
+                    </p>
+                    <p className="text-xs text-white/50 mt-1">
+                      Procesado: {formatDateTime(row.fecha_procesamiento)}
+                    </p>
+                  </div>
 
-                  <div className="text-right flex items-center justify-end gap-2 sm:gap-3">
-                    <span className="mr-1">{row.estatus}</span>
+                  {/* Duración / tamaño */}
+                  <div className="w-full text-sm text-white/80">
+                    <p>{formatSecondsToMSS(row.duracion)}</p>
+                    <p className="text-xs text-white/50">
+                      {formatMB(row.tamano_mb)}
+                    </p>
+                  </div>
 
+                  {/* Estatus + #pistas */}
+                  <div className="w-full flex flex-col items-start gap-1">
+                    <span
+                      className={
+                        "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium " +
+                        (row.estatus === "Procesado"
+                          ? "bg-emerald-500/20 text-emerald-300"
+                          : row.estatus === "Error"
+                          ? "bg-rose-500/20 text-rose-300"
+                          : "bg-yellow-500/20 text-yellow-300")
+                      }
+                    >
+                      {row.estatus}
+                    </span>
+                    <span className="text-xs text-white/60">
+                      Pistas generadas: {row.pistas_count ?? 0}
+                    </span>
+                  </div>
+
+                  {/* Acciones */}
+                  <div className="w-full flex justify-end gap-2">
                     {row.estatus === "Procesado" && (
                       <button
                         onClick={() => handleGoToDownload(row.id, row.titulo)}
-                        className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30"
-                        title="Ver y descargar pistas"
-                        aria-label={`Descargar ${row.titulo}`}
+                        className="inline-flex items-center justify-center px-3 py-2 rounded-xl bg-emerald-500/20 text-emerald-200 text-xs sm:text-sm hover:bg-emerald-500/30"
                       >
-                        <svg
-                          width="18"
-                          height="18"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          aria-hidden
-                        >
-                          <path
-                            d="M12 3v12m0 0 4-4m-4 4-4-4M4 21h16"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
+                        Ver pistas
                       </button>
                     )}
 
                     <button
                       onClick={() => handleDelete(row.id)}
                       disabled={!row.id || deletingIds.has(row.id)}
-                      className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-rose-600/20 text-rose-300 hover:bg-rose-600/30 disabled:opacity-50"
-                      title="Eliminar"
-                      aria-label={`Eliminar ${row.titulo}`}
+                      className="inline-flex items-center justify-center px-3 py-2 rounded-xl bg-rose-600/20 text-rose-200 text-xs sm:text-sm hover:bg-rose-600/30 disabled:opacity-50"
                     >
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        aria-hidden
-                      >
-                        <path
-                          d="M3 6h18M8 6V4h8v2M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
+                      Eliminar
                     </button>
                   </div>
                 </div>

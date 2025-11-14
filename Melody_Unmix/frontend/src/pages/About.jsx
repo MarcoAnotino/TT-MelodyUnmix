@@ -19,10 +19,10 @@ export default function About() {
         "Guitarrista y baterista apasionado por la música. Es parte fundamental del entrenamiento de esta IA.",
     },
     {
-      name: "MARCO GUITARRO",
+      name: "MARCO JIMÉNEZ",
       img: marcoabout1,
       bio:
-        "Experto en la guitarra y decirle a sus crush “Estas muy bonita 🥵👉👈” es clave en la programación de esta herramienta.",
+        "Experto en la guitarra es clave en la programación de esta herramienta.",
     },
     {
       name: "AXEL CABALLERO",
@@ -110,7 +110,7 @@ export default function About() {
         </div>
 
         <p className="mt-3 text-center text-white/80 text-sm">
-          Fragmento grabado en un evento en vivo.
+          Fragmento extraido de un video en internet.
         </p>
       </section>
 

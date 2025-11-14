@@ -1,0 +1,7 @@
+{{ subject }}
+
+{% block content %}{% endblock %}
+
+—
+Melody Unmix
+{{ now|date:"Y-m-d H:i" }} UTC

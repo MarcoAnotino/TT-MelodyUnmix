@@ -1,91 +1,103 @@
 // src/pages/ForgotPassword.jsx
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
-
-const API = process.env.REACT_APP_API_BASE_URL || ""; // p.ej. http://localhost:8000
+import AlertCard from "../components/AlertCard";
+import { requestPasswordReset } from "../lib/api";
 
 export default function ForgotPassword() {
-  // (opcional) marcar el body para estilos “scoped” por página
+  const navigate = useNavigate();
+
   useEffect(() => {
     document.body.dataset.page = "forgot";
-    return () => {
-      delete document.body.dataset.page;
-    };
+    return () => { delete document.body.dataset.page; };
   }, []);
 
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
-  const [status, setStatus] = useState(null); // "ok" | "error" | null
-  const [msg, setMsg] = useState("");
+
+  // feedback
+  const [errOpen, setErrOpen] = useState(false);
+  const [errMsg, setErrMsg] = useState("");
+  const [okOpen, setOkOpen] = useState(false);
+  const [okMsg, setOkMsg] = useState("");
 
   const onSubmit = async (e) => {
     e.preventDefault();
     if (!email || sending) return;
 
     setSending(true);
-    setStatus(null);
-    setMsg("");
+    setErrOpen(false);
+    setOkOpen(false);
 
     try {
-      const res = await fetch(`${API}/api/auth/forgot-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
+      // Esperado: 200 OK con { found: true, status: "sent" } o similar
+      const data = await requestPasswordReset(email.trim());
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-      const data = await res.json().catch(() => ({}));
-      setStatus("ok");
-      setMsg(
-        data?.message ||
-          "Si el correo existe, te enviamos un enlace para restablecer tu contraseña."
-      );
+      // ─── MODO "estricto": redirigir sólo si backend confirma existencia ───
+      if (data?.found === true || data?.status === "sent") {
+        setOkMsg("Te enviamos un código de verificación. Continúa para validarlo.");
+        setOkOpen(true);
+        // pequeña pausa opcional para que alcancen a leer el mensaje
+        setTimeout(() => {
+          navigate("/reset-verify", { replace: true, state: { email: email.trim() } });
+        }, 700);
+      } else {
+        // Si tu backend no revela existencia (anti-enumeración),
+        // puedes igualmente redirigir SIEMPRE y mostrar genérico allá.
+        setOkMsg("Si el correo existe, te enviamos un código de verificación.");
+        setOkOpen(true);
+        setTimeout(() => {
+          navigate("/reset-verify", { replace: true, state: { email: email.trim() } });
+        }, 700);
+      }
     } catch (err) {
-      setStatus("error");
-      setMsg("No pudimos enviar el correo. Inténtalo de nuevo en unos minutos.");
+      // Si tu backend devuelve 404 para "no existe", puedes detectarlo así:
+      const status = err?.response?.status;
+      if (status === 404) {
+        setErrMsg("Ese correo no se encuentra registrado.");
+      } else {
+        const detail =
+          err?.response?.data?.detail ||
+          err?.message ||
+          "No pudimos enviar el código. Intenta de nuevo.";
+        setErrMsg(detail);
+      }
+      setErrOpen(true);
     } finally {
       setSending(false);
     }
   };
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-forgot-password">
-      {/* Glows fijos (mismo patrón que Home) */}
-      <div className="glow glow-top" />
-      <div className="glow glow-left" />
-      <div className="glow glow-right" />
+    <div className="relative min-h-screen overflow-x-hidden bg-forgot-password text-white">
+      {/* Overlay loading */}
+      {sending && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 backdrop-blur-sm">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-black/70 border border-white/10">
+            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25"></circle>
+              <path d="M4 12a8 8 0 0 1 8-8" stroke="currentColor" strokeWidth="4" className="opacity-90"></path>
+            </svg>
+            <span>Enviando…</span>
+          </div>
+        </div>
+      )}
 
-      {/* Navbar “Home / About / Sign in | up” */}
       <Header variant="home" />
-
-      {/* separador para no tapar el hero con la navbar */}
       <div className="pt-8" />
 
-      <main className="relative z-10 max-w-xl mx-auto px-6 pt-24 pb-28 text-white">
-        {/* Título */}
+      <main className="relative z-10 max-w-xl mx-auto px-6 pt-24 pb-28">
         <header className="text-center mb-8">
-          <h1 className="text-4xl sm:text-5xl font-mazzard-h-medium">
-            ¿Olvidaste tu contraseña?
-          </h1>
+          <h1 className="text-4xl sm:text-5xl font-semibold">¿Olvidaste tu contraseña?</h1>
           <p className="mt-3 text-lg text-white/80">
-            Te enviaremos un enlace para restablecerla.
+            Te enviaremos un código para restablecerla.
           </p>
         </header>
 
-        {/* Card del formulario */}
-        <section
-          className="
-            bg-black/40 backdrop-blur-md rounded-2xl border border-white/10
-            shadow-[0_18px_60px_rgba(0,0,0,.45)] p-6 sm:p-8
-          "
-        >
-          <form onSubmit={onSubmit} className="space-y-5">
-            <label
-              htmlFor="fp-email"
-              className="block text-sm uppercase tracking-widest text-white/70"
-            >
+        <section className="bg-black/40 backdrop-blur-md rounded-2xl border border-white/10 shadow-[0_18px_60px_rgba(0,0,0,.45)] p-6 sm:p-8">
+          <form onSubmit={onSubmit} className={`space-y-5 ${sending ? "pointer-events-none opacity-90" : ""}`}>
+            <label htmlFor="fp-email" className="block text-sm uppercase tracking-widest text-white/70">
               Correo electrónico
             </label>
             <input
@@ -95,52 +107,37 @@ export default function ForgotPassword() {
               placeholder="tu@correo.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="
-                w-full h-12 px-4 rounded-xl bg-white/10 text-white
-                outline-none ring-0 border border-white/10
-                focus:border-teal-300/60 focus:bg-white/12
-                placeholder:text-white/40 transition
-              "
               autoComplete="email"
+              className="w-full h-12 px-4 rounded-xl bg-white/10 text-white outline-none ring-0 border border-white/10 focus:border-teal-300/60 focus:bg-white/12 placeholder:text-white/40 transition"
             />
 
             <button
               type="submit"
-              disabled={sending}
-              className="
-                mt-2 inline-flex items-center justify-center w-full h-12
-                rounded-xl bg-[#08D9D6] text-[#141516] font-mazzard-m-semi-bold text-lg
-                hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed
-                transition
-              "
+              disabled={sending || !email}
+              className="mt-2 inline-flex items-center justify-center w-full h-12 rounded-xl bg-[#08D9D6] text-[#141516] font-semibold text-lg hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition"
             >
-              {sending ? "Enviando..." : "Enviar enlace"}
+              {sending ? "Enviando..." : "Enviar código"}
             </button>
           </form>
 
-          {/* Mensajes de estado */}
-          {status && (
-            <div className="mt-5">
-              {status === "ok" ? (
-                <p className="px-4 py-2 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-400/20">
-                  {msg}
-                </p>
-              ) : (
-                <p className="px-4 py-2 rounded-lg bg-rose-500/15 text-rose-300 border border-rose-400/20">
-                  {msg}
-                </p>
-              )}
-            </div>
-          )}
+          {/* Feedback */}
+          <AlertCard
+            open={okOpen}
+            title="Revisa tu correo"
+            description={okMsg}
+            onClose={() => setOkOpen(false)}
+            type="success"
+          />
+          <AlertCard
+            open={errOpen}
+            title="No pudimos enviar el código"
+            description={errMsg}
+            onClose={() => setErrOpen(false)}
+          />
 
-          {/* Enlaces secundarios (SPA, sin recargar) */}
           <div className="mt-6 flex items-center justify-between text-sm">
-            <Link to="/signin" className="text-white/80 hover:text-white transition">
-              Volver a iniciar sesión
-            </Link>
-            <Link to="/signup" className="text-white/80 hover:text-white transition">
-              Crear cuenta
-            </Link>
+            <Link to="/signin" className="text-white/80 hover:text-white transition">Volver a iniciar sesión</Link>
+            <Link to="/signup" className="text-white/80 hover:text-white transition">Crear cuenta</Link>
           </div>
         </section>
       </main>
