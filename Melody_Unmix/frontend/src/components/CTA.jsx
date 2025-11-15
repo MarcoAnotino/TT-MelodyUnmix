@@ -25,7 +25,7 @@ const CTA = () => {
         "
       >
         <span className="text-[#141516] font-mazzard-m-semi-bold text-lg sm:text-2xl md:text-3xl">
-          Sign Up
+          Regístrate
         </span>
       </button>
     </div>

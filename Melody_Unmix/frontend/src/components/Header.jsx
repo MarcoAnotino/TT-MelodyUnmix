@@ -24,6 +24,9 @@ function hasAccessToken() {
 }
 
 function readStoredUser() {
+  // Si no hay token válido, ignoramos cualquier "user" guardado
+  if (!hasAccessToken()) return null;
+
   try {
     const raw = sessionStorage.getItem("user") || localStorage.getItem("user");
     return raw ? JSON.parse(raw) : null;
@@ -32,9 +35,21 @@ function readStoredUser() {
   }
 }
 
+
 export default function Header({ variant = "default" }) {
   const navigate = useNavigate();
-  const [user, setUser] = useState(() => readStoredUser());
+
+  const [user, setUser] = useState(() => {
+    // Limpieza defensiva: si no hay access, borra cualquier user colgado
+
+    if (!hasAccessToken()) {
+      sessionStorage.removeItem("user");
+      localStorage.removeItem("user");
+      return null;
+    }
+    return readStoredUser();
+  });
+  
   const [menuOpen, setMenuOpen] = useState(false); // menú del avatar
   const [mobileNavOpen, setMobileNavOpen] = useState(false); // menú hamburguesa
   const menuRef = useRef(null);
@@ -223,8 +238,8 @@ export default function Header({ variant = "default" }) {
             overflow-x-auto
           "
         >
-          {!user && <NavLink to="/">Home</NavLink>}
-          {!user && <NavLink to="/about">About</NavLink>}
+          {!user && <NavLink to="/">Inicio</NavLink>}
+          {!user && <NavLink to="/about">Nosotros</NavLink>}
           {user && <NavLink to="/app">Mis archivos</NavLink>}
           {user && <NavLink to="/profile">Mi perfil</NavLink>}
         </nav>
@@ -241,7 +256,7 @@ export default function Header({ variant = "default" }) {
                 whitespace-nowrap
               "
             >
-              Sign in
+              Inicia sesión
             </Link>
             <Link
               to="/signup"
@@ -253,7 +268,7 @@ export default function Header({ variant = "default" }) {
                 whitespace-nowrap
               "
             >
-              Sign up
+              Regístrate
             </Link>
           </div>
         ) : (
@@ -359,10 +374,10 @@ export default function Header({ variant = "default" }) {
               {!user && (
                 <>
                   <NavLink to="/" onClick={() => setMobileNavOpen(false)}>
-                    Home
+                    Inicio
                   </NavLink>
                   <NavLink to="/about" onClick={() => setMobileNavOpen(false)}>
-                    About
+                    Nosotros
                   </NavLink>
                 </>
               )}

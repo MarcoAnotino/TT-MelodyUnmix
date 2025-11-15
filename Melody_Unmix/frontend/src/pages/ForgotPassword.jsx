@@ -27,19 +27,27 @@ export default function ForgotPassword() {
   const onSubmit = async (e) => {
     e.preventDefault();
     if (!email || sending) return;
-
+  
     setSending(true);
     setErrOpen(false);
     setOkOpen(false);
-
+  
     try {
       const data = await requestPasswordReset(email.trim());
-
-      if (data?.found === true || data?.status === "sent") {
+  
+      // Normaliza la condición de "éxito real"
+      const emailExists =
+        data?.found === true ||
+        data?.status === "sent" ||
+        data?.email_exists === true; // por si en backend lo llamas distinto
+  
+      if (emailExists) {
+        // ✅ Solo aquí navegamos a /reset-verify
         setOkMsg(
           "Te enviamos un código de verificación. Continúa para validarlo."
         );
         setOkOpen(true);
+  
         setTimeout(() => {
           navigate("/reset-verify", {
             replace: true,
@@ -47,20 +55,17 @@ export default function ForgotPassword() {
           });
         }, 700);
       } else {
-        setOkMsg(
-          "Si el correo existe, te enviamos un código de verificación."
-        );
-        setOkOpen(true);
-        setTimeout(() => {
-          navigate("/reset-verify", {
-            replace: true,
-            state: { email: email.trim() },
-          });
-        }, 700);
+        // ❌ El backend NO confirmó que exista → no navegamos
+        const msg =
+          data?.detail ||
+          "Ese correo no se encuentra registrado.";
+        setErrMsg(msg);
+        setErrOpen(true);
       }
     } catch (err) {
       const status = err?.response?.status;
       if (status === 404) {
+        // Backend dijo explícitamente que no existe
         setErrMsg("Ese correo no se encuentra registrado.");
       } else {
         const detail =
@@ -74,6 +79,7 @@ export default function ForgotPassword() {
       setSending(false);
     }
   };
+  
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-forgot-password text-white">

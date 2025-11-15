@@ -1,6 +1,6 @@
 export const ACCEPTED_MIME = ["audio/wav","audio/x-wav","audio/mpeg","audio/mp3"];
 export const ACCEPTED_EXT = [".wav", ".mp3"];
-export const SIZE_LIMIT_MB = 40;
+export const SIZE_LIMIT_MB = 50;
 export const SIZE_LIMIT_BYTES = SIZE_LIMIT_MB * 1024 * 1024;
 
 export function validateAudioFile(file) {
