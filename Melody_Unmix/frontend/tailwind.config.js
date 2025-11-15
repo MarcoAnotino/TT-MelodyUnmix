@@ -4,6 +4,10 @@ module.exports = {
   content: ["./public/index.html", "./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {
+
+      screens: {
+        xs: "480px", // se activa a partir de 480px de ancho
+      },
       // Gradiente global para poder usar: className="bg-app-gradient"
       backgroundImage: {
         'app-gradient':

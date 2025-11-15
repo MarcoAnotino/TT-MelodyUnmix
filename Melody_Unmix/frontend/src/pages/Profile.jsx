@@ -1,22 +1,24 @@
 // src/pages/Profile.jsx
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import Header from "../components/Header";
-import { me } from "../lib/api";
+import { me, updateProfile } from "../lib/api";
 
 export default function Profile() {
-  const [name, setName] = useState("Usuario");
-  const [email, setEmail] = useState("");
-  const [theme, setTheme] = useState("system"); // system | light | dark
+  const [firstName, setFirstName] = useState("");
+  const [lastName,  setLastName]  = useState("");
+  const [username,  setUsername]  = useState("");
+  const [email,     setEmail]     = useState("");
+  const [theme,     setTheme]     = useState("system");
 
   const [initialLoading, setInitialLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [status, setStatus] = useState(null); // "ok" | "error" | null
+  const [status, setStatus] = useState(null);
 
-  // 👇 Nuevo: manejo de avatar
   const [avatarFile, setAvatarFile] = useState(null);
-  const [avatarPreview, setAvatarPreview] = useState(null); // URL para mostrar
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [avatarRemoved, setAvatarRemoved] = useState(false);
 
-  // Cargar datos reales del usuario al montar
   useEffect(() => {
     let mounted = true;
 
@@ -25,15 +27,11 @@ export default function Profile() {
         const u = await me();
         if (!mounted) return;
 
-        const fullName =
-          (u.first_name || u.last_name)
-            ? `${u.first_name || ""} ${u.last_name || ""}`.trim()
-            : (u.username || "Usuario");
-
-        setName(fullName);
+        setFirstName(u.first_name || "");
+        setLastName(u.last_name || "");
+        setUsername(u.username || "");
         setEmail(u.email || "");
 
-        // Si en el backend luego expones algo como "avatar_url", lo usas aquí:
         if (u.avatar_url) {
           setAvatarPreview(u.avatar_url);
         }
@@ -50,14 +48,26 @@ export default function Profile() {
     };
   }, []);
 
-  // Cuando el usuario selecciona una nueva imagen
   const onAvatarChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setAvatarFile(file);
+    if (!file.type.startsWith("image/")) {
+      setStatus("error");
+      alert("Solo se permiten archivos de imagen (JPG, PNG, WEBP).");
+      return;
+    }
 
-    // Creamos un preview local (data URL)
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setStatus("error");
+      alert("La imagen no debe exceder 2 MB.");
+      return;
+    }
+
+    setAvatarFile(file);
+    setAvatarRemoved(false);
+
     const reader = new FileReader();
     reader.onloadend = () => {
       setAvatarPreview(reader.result);
@@ -65,22 +75,60 @@ export default function Profile() {
     reader.readAsDataURL(file);
   };
 
+  const onClearAvatar = () => {
+    if (!avatarPreview) return;
+    setAvatarFile(null);
+    setAvatarPreview(null);
+    setAvatarRemoved(true);
+  };
+
   const onSave = async () => {
     setSaving(true);
     setStatus(null);
 
     try {
-      // TODO: cuando tengas endpoint real, algo así:
-      // const formData = new FormData();
-      // formData.append("name", name);
-      // formData.append("theme", theme);
-      // if (avatarFile) formData.append("avatar", avatarFile);
-      // await api.patch("/api/users/me/", formData, {
-      //   headers: { "Content-Type": "multipart/form-data" },
-      // });
+      const formData = new FormData();
+      formData.append("first_name", firstName);
+      formData.append("last_name", lastName);
 
-      // Por ahora solo simulamos:
-      await new Promise((r) => setTimeout(r, 600));
+      if (avatarFile) {
+        formData.append("avatar", avatarFile);
+      }
+
+      if (avatarRemoved && !avatarFile) {
+        formData.append("clear_avatar", "1");
+      }
+
+      const updated = await updateProfile(formData);
+
+      setFirstName(updated.first_name || "");
+      setLastName(updated.last_name || "");
+      setUsername(updated.username || "");
+      setEmail(updated.email || "");
+
+      if (updated.avatar_url) {
+        setAvatarPreview(updated.avatar_url);
+        setAvatarRemoved(false);
+      } else {
+        setAvatarPreview(null);
+      }
+
+      const storage = localStorage.getItem("access")
+        ? localStorage
+        : sessionStorage;
+
+      const snapshot = {
+        username: updated.username,
+        email: updated.email,
+        first_name: updated.first_name,
+        last_name: updated.last_name,
+        avatar_url: updated.avatar_url || null,
+      };
+
+      storage.setItem("user", JSON.stringify(snapshot));
+      window.dispatchEvent(
+        new CustomEvent("user:updated", { detail: snapshot })
+      );
 
       setStatus("ok");
     } catch (err) {
@@ -96,20 +144,27 @@ export default function Profile() {
       <Header variant="home" />
       <div className="pt-8" />
 
-      <main className="max-w-3xl mx-auto px-6 pt-12 pb-24">
-        <h1 className="text-[clamp(24px,7vw,40px)] font-mazzard-h-medium">
-          Tu perfil
-        </h1>
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 pt-20 pb-24">
+        <header className="flex flex-col gap-2 text-center sm:text-left">
+          <h1 className="text-[clamp(24px,6vw,40px)] font-mazzard-h-medium">
+            Tu perfil
+          </h1>
+          <p className="text-sm sm:text-base text-white/70 max-w-xl mx-auto sm:mx-0">
+            Administra tu información básica, tu foto y algunas preferencias
+            visuales de Melody Unmix.
+          </p>
+        </header>
 
         {initialLoading ? (
-          <p className="mt-6 text-white/70">Cargando perfil…</p>
+          <p className="mt-6 text-center sm:text-left text-white/70">
+            Cargando perfil…
+          </p>
         ) : (
           <section className="mt-8 grid gap-6">
             {/* Bloque: Foto de perfil + datos */}
-            <div className="rounded-2xl bg-black/30 border border-white/10 p-6 space-y-6">
-              {/* Foto de perfil */}
-              <div className="flex items-center gap-4">
-                <div className="h-20 w-20 rounded-full bg-white/10 border border-white/10 overflow-hidden flex items-center justify-center">
+            <div className="rounded-2xl bg-black/40 border border-white/10 p-5 sm:p-6 space-y-6 backdrop-blur-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+                <div className="mx-auto sm:mx-0 h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-white/5 border border-white/10 overflow-hidden flex items-center justify-center shrink-0">
                   {avatarPreview ? (
                     <img
                       src={avatarPreview}
@@ -123,57 +178,89 @@ export default function Profile() {
                   )}
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 text-center sm:text-left">
                   <p className="text-sm text-white/80">Foto de perfil</p>
-                  <label className="inline-flex items-center gap-2 text-sm cursor-pointer px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={onAvatarChange}
-                    />
-                    <svg
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      aria-hidden
-                    >
-                      <path
-                        d="M4 7h3l1.2-2.4A1 1 0 0 1 9.1 4h5.8a1 1 0 0 1 .9.6L17 7h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z"
-                        stroke="currentColor"
-                        strokeWidth="1.6"
+                  <div className="flex flex-wrap justify-center sm:justify-start items-center gap-2">
+                    <label className="inline-flex items-center gap-2 text-sm cursor-pointer px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={onAvatarChange}
                       />
-                      <circle
-                        cx="12"
-                        cy="13"
-                        r="3.2"
-                        stroke="currentColor"
-                        strokeWidth="1.6"
-                      />
-                    </svg>
-                    <span>Subir imagen</span>
-                  </label>
-                  <p className="text-xs text-white/60">
-                    JPG o PNG, máx. 2&nbsp;MB.
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        aria-hidden
+                      >
+                        <path
+                          d="M4 7h3l1.2-2.4A1 1 0 0 1 9.1 4h5.8a1 1 0 0 1 .9.6L17 7h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                        />
+                        <circle
+                          cx="12"
+                          cy="13"
+                          r="3.2"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                        />
+                      </svg>
+                      <span>Subir imagen</span>
+                    </label>
+
+                    {avatarPreview && (
+                      <button
+                        type="button"
+                        onClick={onClearAvatar}
+                        className="text-xs sm:text-sm px-3 py-2 rounded-xl border border-red-400/60 text-red-300 hover:bg-red-500/10"
+                      >
+                        Eliminar foto actual
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[11px] sm:text-xs text-white/60">
+                    JPG, PNG o WEBP, máx. 2&nbsp;MB.
                   </p>
                 </div>
               </div>
 
-              {/* Datos */}
-              <div className="grid sm:grid-cols-2 gap-4">
+              <div className="h-px w-full bg-white/5" />
+
+              {/* Datos editables */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <label className="block text-sm text-white/80">
                   Nombre
                   <input
-                    className="mt-2 w-full rounded-xl bg-white/10 border border-white/10 px-3 py-2 outline-none"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    className="mt-2 w-full rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-sm sm:text-base outline-none focus:ring-2 focus:ring-[#08D9D6]/60"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="Ej. Marco Antonio"
+                  />
+                </label>
+                <label className="block text-sm text-white/80">
+                  Apellidos
+                  <input
+                    className="mt-2 w-full rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-sm sm:text-base outline-none focus:ring-2 focus:ring-[#08D9D6]/60"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Ej. Jimenez Morales"
+                  />
+                </label>
+                <label className="block text-sm text-white/80">
+                  Usuario
+                  <input
+                    className="mt-2 w-full rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-sm sm:text-base outline-none opacity-70"
+                    value={username}
+                    disabled
                   />
                 </label>
                 <label className="block text-sm text-white/80">
                   Correo
                   <input
-                    className="mt-2 w-full rounded-xl bg-white/10 border border-white/10 px-3 py-2 outline-none opacity-70"
+                    className="mt-2 w-full rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-sm sm:text-base outline-none opacity-70"
                     value={email}
                     disabled
                   />
@@ -182,17 +269,22 @@ export default function Profile() {
             </div>
 
             {/* Preferencias */}
-            <div className="rounded-2xl bg-black/30 border border-white/10 p-6">
-              <h2 className="text-xl mb-4">Preferencias</h2>
-              <div className="grid sm:grid-cols-2 gap-4">
+            <div className="rounded-2xl bg-black/40 border border-white/10 p-5 sm:p-6 backdrop-blur-sm">
+              <h2 className="text-lg sm:text-xl mb-1 font-mazzard-h-medium text-center sm:text-left">
+                Preferencias
+              </h2>
+              <p className="text-xs text-white/60 mb-4 text-center sm:text-left">
+                Ajusta cómo se ve la interfaz de Melody Unmix en tu dispositivo.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <label className="block text-sm text-white/80">
                   Tema
                   <select
-                    className="mt-2 w-full rounded-xl bg-white/10 border border-white/10 px-3 py-2 outline-none"
+                    className="mt-2 w-full rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-sm sm:text-base outline-none focus:ring-2 focus:ring-[#08D9D6]/60"
                     value={theme}
                     onChange={(e) => setTheme(e.target.value)}
                   >
-                    <option value="system">Sistema</option>
+                    <option value="system">Usar tema del sistema</option>
                     <option value="light">Claro</option>
                     <option value="dark">Oscuro</option>
                   </select>
@@ -200,21 +292,40 @@ export default function Profile() {
               </div>
             </div>
 
-            {/* Botón de guardado */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={onSave}
-                disabled={saving}
-                className="rounded-xl bg-[#08D9D6] text-[#141516] px-6 py-3 font-semibold hover:brightness-110 disabled:opacity-60"
-              >
-                {saving ? "Guardando..." : "Guardar cambios"}
-              </button>
-              {status === "ok" && (
-                <span className="text-emerald-300">Guardado ✓</span>
-              )}
-              {status === "error" && (
-                <span className="text-rose-300">No se pudo guardar</span>
-              )}
+            {/* Botón de guardado + borrar cuenta */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
+                <button
+                  onClick={onSave}
+                  disabled={saving}
+                  className="w-full sm:w-auto rounded-xl bg-[#08D9D6] text-[#141516] px-6 py-3 font-semibold hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition text-sm sm:text-base text-center"
+                >
+                  {saving ? "Guardando..." : "Guardar cambios"}
+                </button>
+                {status === "ok" && (
+                  <span className="text-xs sm:text-sm text-emerald-300">
+                    Cambios guardados ✓
+                  </span>
+                )}
+                {status === "error" && (
+                  <span className="text-xs sm:text-sm text-rose-300">
+                    No se pudo guardar, intenta de nuevo
+                  </span>
+                )}
+              </div>
+
+              <div className="border-t border-white/10 pt-4 sm:pt-0 sm:border-t-0 sm:pl-6 sm:border-l sm:border-white/10 text-center sm:text-left">
+                <p className="text-[11px] sm:text-xs text-white/60 mb-2">
+                  ¿Quieres darte de baja definitivamente?
+                </p>
+                <Link
+                  to="/delete-account"
+                  className="inline-flex items-center justify-center sm:justify-start gap-2 text-xs sm:text-sm text-red-300 hover:text-red-200"
+                >
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  Eliminar cuenta
+                </Link>
+              </div>
             </div>
           </section>
         )}

@@ -1,4 +1,3 @@
-// src/pages/Home.jsx
 import React from "react";
 import Header from "../components/Header";
 import Hero from "../components/Hero";
@@ -8,16 +7,23 @@ import CTA from "../components/CTA";
 export default function Home() {
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-home">
-      {/* Navbar del Home: un solo pill con Home / About / Sign In–Sign up */}
+      {/* Navbar del Home */}
       <Header variant="home" />
 
       {/* Separación para que el hero no quede debajo del header */}
-      <div className="pt-8" />
+      <div className="pt-16 sm:pt-20" />
 
-      <main className="flex flex-col gap-6">
+      <main className="flex flex-col gap-16 sm:gap-20 pb-10">
+        {/* Hero ocupa el ancho completo */}
         <Hero />
-        <Features />
-        <section className="mt-4">
+
+        {/* Sección de features centrada */}
+        <section className="w-full max-w-6xl mx-auto px-4 sm:px-6">
+          <Features />
+        </section>
+
+        {/* CTA centrado con espacio */}
+        <section className="w-full max-w-4xl mx-auto px-4 sm:px-6 mb-6 sm:mb-12">
           <CTA />
         </section>
       </main>

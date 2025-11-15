@@ -90,7 +90,6 @@ export default function ResetPassword() {
 
       setStatus("ok");
       setMsg("¡Listo! Tu contraseña fue actualizada.");
-      // OJO: aquí navegamos a /reset-done (coincide con App.js)
       setTimeout(() => navigate("/reset-done", { replace: true }), 1200);
     } catch (err) {
       setStatus("error");
@@ -105,27 +104,33 @@ export default function ResetPassword() {
       <Header variant="home" />
       <div className="pt-8" />
 
-      <main className="relative z-10 max-w-xl mx-auto px-6 pt-20 pb-28">
-        <header className="text-center mb-8">
-          <h1 className="text-[clamp(24px,7vw,40px)] font-mazzard-h-medium">
+      <main className="relative z-10 max-w-5xl mx-auto px-6 pt-24 pb-28">
+        {/* Título */}
+        <header className="text-center mb-10">
+          <h1 className="text-[clamp(24px,6vw,40px)] font-mazzard-h-medium">
             Restablece tu contraseña
           </h1>
-          <p className="mt-2 text-[clamp(14px,4vw,18px)] text-white/80">
+          <p className="mt-3 text-[clamp(14px,4vw,18px)] text-white/80">
             Ingresa una nueva contraseña para tu cuenta.
           </p>
         </header>
 
+        {/* Aviso si el link es inválido */}
         {!uidOk && (
-          <div className="mb-6 rounded-xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-rose-200">
+          <div className="mb-6 rounded-xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-rose-200 text-sm sm:text-base">
             El enlace es inválido o ha expirado. Solicita un nuevo código.
           </div>
         )}
 
-        <section className="bg-black/40 backdrop-blur-md rounded-2xl border border-white/10 shadow-[0_18px_60px_rgba(0,0,0,.45)] p-6 sm:p-8">
-          <form onSubmit={onSubmit} className="space-y-5">
-            <label className="block text-sm text-white/90">
-              Nueva contraseña
-              <div className="mt-2 flex items-center rounded-xl bg-white/10 border border-white/10 px-3 py-2 focus-within:ring-2 focus-within:ring-teal-300/50">
+        {/* Card principal */}
+        <section className="mx-auto w-full max-w-xl bg-black/40 backdrop-blur-md rounded-2xl border border-white/10 shadow-[0_18px_60px_rgba(0,0,0,.45)] p-6 sm:p-8">
+          <form onSubmit={onSubmit} className="space-y-6">
+            {/* Nueva contraseña */}
+            <div className="space-y-2">
+              <label className="block text-sm text-white/90">
+                Nueva contraseña
+              </label>
+              <div className="flex items-center rounded-xl bg-white/10 border border-white/10 px-3 py-2 focus-within:ring-2 focus-within:ring-teal-300/50">
                 <input
                   type={showPw ? "text" : "password"}
                   className="w-full bg-transparent text-base md:text-lg outline-none placeholder:text-white/40"
@@ -143,35 +148,38 @@ export default function ResetPassword() {
                   className="ml-3"
                 />
               </div>
-            </label>
 
-            {/* Checklist de requisitos */}
-            <div className="mt-2 space-y-1 text-xs" aria-live="polite">
-              {Object.entries(PWD_RULES).map(([key, rule]) => {
-                const ok = pwdChecks[key];
-                return (
-                  <div
-                    key={key}
-                    className={`flex items-center gap-2 ${
-                      ok ? "text-green-300" : "text-white/70"
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-3 w-3 rounded-full ${
-                        ok ? "bg-green-300" : "bg-white/30"
+              {/* Checklist de requisitos */}
+              <div className="mt-2 space-y-1 text-xs sm:text-sm" aria-live="polite">
+                {Object.entries(PWD_RULES).map(([key, rule]) => {
+                  const ok = pwdChecks[key];
+                  return (
+                    <div
+                      key={key}
+                      className={`flex items-center gap-2 ${
+                        ok ? "text-green-300" : "text-white/70"
                       }`}
-                    ></span>
-                    <span>{rule.label}</span>
-                  </div>
-                );
-              })}
+                    >
+                      <span
+                        className={`inline-block h-3 w-3 rounded-full ${
+                          ok ? "bg-green-300" : "bg-white/30"
+                        }`}
+                      ></span>
+                      <span>{rule.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
-            <label className="block text-sm text-white/90">
-              Confirmar contraseña
+            {/* Confirmar contraseña */}
+            <div className="space-y-2">
+              <label className="block text-sm text-white/90">
+                Confirmar contraseña
+              </label>
               <input
                 type={showPw ? "text" : "password"}
-                className={`mt-2 w-full rounded-xl bg-white/10 border px-3 py-2 text-base md:text-lg outline-none placeholder:text-white/40 focus:ring-2 focus:ring-teal-300/50 ${
+                className={`w-full mt-2 rounded-xl bg-white/10 border px-3 py-2 text-base md:text-lg outline-none placeholder:text-white/40 focus:ring-2 focus:ring-teal-300/50 ${
                   !passwordsMatch && pw2.length > 0
                     ? "border-rose-400"
                     : "border-white/10"
@@ -187,25 +195,27 @@ export default function ResetPassword() {
                   Las contraseñas no coinciden.
                 </p>
               )}
-            </label>
+            </div>
 
+            {/* Botón */}
             <button
               type="submit"
               disabled={!uidOk || sending || !isPwdValid || !passwordsMatch}
-              className="mt-2 inline-flex items-center justify-center w-full h-12 rounded-xl bg-[#08D9D6] text-[#141516] font-mazzard-m-semi-bold text-lg hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition"
+              className="mt-2 inline-flex items-center justify-center w-full h-12 rounded-xl bg-[#08D9D6] text-[#141516] font-mazzard-m-semi-bold text-base sm:text-lg hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition"
             >
               {sending ? "Actualizando..." : "Cambiar contraseña"}
             </button>
           </form>
 
+          {/* Mensaje de estado */}
           {status && (
             <div className="mt-5">
               {status === "ok" ? (
-                <p className="px-4 py-2 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-400/20">
+                <p className="px-4 py-2 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-400/20 text-sm sm:text-base">
                   {msg}
                 </p>
               ) : (
-                <p className="px-4 py-2 rounded-lg bg-rose-500/15 text-rose-300 border border-rose-400/20">
+                <p className="px-4 py-2 rounded-lg bg-rose-500/15 text-rose-300 border border-rose-400/20 text-sm sm:text-base">
                   {msg}
                 </p>
               )}

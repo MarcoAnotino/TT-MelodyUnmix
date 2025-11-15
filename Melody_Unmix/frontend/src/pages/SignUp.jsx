@@ -64,10 +64,11 @@ export default function SignUp() {
     pwdChecks.upper &&
     pwdChecks.number &&
     pwdChecks.special;
+
   const passwordsMatch =
     form.contrasena.length > 0 && form.confirmarContrasena.length > 0
       ? form.contrasena === form.confirmarContrasena
-      : true; // no marcar error hasta que haya input en confirmación
+      : true;
 
   const fail = (msg) => {
     setErrMsg(msg);
@@ -117,7 +118,6 @@ export default function SignUp() {
         last_name: v.apellidos,
       });
 
-      // Éxito: esperar a que el usuario cierre
       setOkMsg(
         "Cuenta creada correctamente. Presiona cerrar para ir a Iniciar sesión."
       );
@@ -144,20 +144,19 @@ export default function SignUp() {
   const handleConfirmPaste = (e) => {
     e.preventDefault();
     setConfirmPasteWarn(true);
-    // Oculta el aviso después de 3s (opcional)
     setTimeout(() => setConfirmPasteWarn(false), 3000);
   };
 
-  const blockEvent = (e) => e.preventDefault(); // útil para onCopy/onCut/onDrop
+  const blockEvent = (e) => e.preventDefault();
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-signup text-white">
       {/* Overlay de carga */}
       {submitting && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 backdrop-blur-sm">
-          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-black/70 border border-white/10">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-black/70 border border-white/10 text-sm sm:text-base">
             <svg
-              className="animate-spin h-5 w-5"
+              className="animate-spin h-4 w-4 sm:h-5 sm:w-5"
               viewBox="0 0 24 24"
               fill="none"
               aria-hidden
@@ -183,24 +182,34 @@ export default function SignUp() {
       )}
 
       <Header />
-      <main className="max-w-5xl mx-auto px-6 pt-24 pb-28">
-        <div className="text-center mb-10">
-          <h1 className="text-5xl sm:text-6xl font-semibold">Crear cuenta</h1>
-          <p className="mt-3 text-lg opacity-90">
+
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-20 sm:pt-28 pb-20 sm:pb-28">
+        <div className="text-center mb-8 sm:mb-10 px-2">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold">
+            Crear cuenta
+          </h1>
+          <p className="mt-3 text-base sm:text-lg opacity-90">
             Únete a Melody Unmix en segundos
           </p>
         </div>
 
         <div
-          className={`mx-auto w-full max-w-3xl bg-black/40 backdrop-blur-md rounded-2xl border border-white/10 p-6 sm:p-10 shadow-[0_10px_25px_rgba(0,0,0,0.35)] ${
-            submitting ? "pointer-events-none opacity-90" : ""
-          }`}
+          className={[
+            "mx-auto w-full max-w-lg sm:max-w-3xl",
+            "bg-black/40 backdrop-blur-md rounded-2xl border border-white/10",
+            "p-5 sm:p-8 lg:p-10",
+            "shadow-[0_10px_25px_rgba(0,0,0,0.35)]",
+            submitting ? "pointer-events-none opacity-90" : "",
+          ].join(" ")}
         >
-          <form onSubmit={onSubmit} className="space-y-6">
+          <form onSubmit={onSubmit} className="space-y-5 sm:space-y-6">
             {/* Nombre(s) y Apellidos */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm opacity-90" htmlFor="nombres">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div className="space-y-1.5">
+                <label
+                  className="text-xs sm:text-sm opacity-90"
+                  htmlFor="nombres"
+                >
                   Nombre(s)
                 </label>
                 <input
@@ -210,21 +219,24 @@ export default function SignUp() {
                   autoComplete="given-name"
                   required
                   aria-invalid={!!fieldErrors.first_name}
-                  className={`w-full h-12 rounded-xl bg-black/55 border px-4 focus:outline-none focus:ring-2 focus:ring-[#A87D06]/70 ${
+                  className={`w-full h-11 sm:h-12 rounded-xl bg-black/55 border px-3 sm:px-4 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-[#A87D06]/70 ${
                     fieldErrors.first_name
                       ? "border-rose-400"
                       : "border-white/10"
                   }`}
                 />
                 {fieldErrors.first_name && (
-                  <p className="mt-1 text-sm text-rose-300">
+                  <p className="mt-1 text-xs sm:text-sm text-rose-300">
                     {fieldErrors.first_name}
                   </p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm opacity-90" htmlFor="apellidos">
+              <div className="space-y-1.5">
+                <label
+                  className="text-xs sm:text-sm opacity-90"
+                  htmlFor="apellidos"
+                >
                   Apellidos
                 </label>
                 <input
@@ -234,7 +246,7 @@ export default function SignUp() {
                   autoComplete="family-name"
                   required
                   aria-invalid={!!fieldErrors.last_name}
-                  className={`w-full h-12 rounded-xl bg-black/55 border px-4 focus:outline-none focus:ring-2 focus:ring-[#A87D06]/70 ${
+                  className={`w-full h-11 sm:h-12 rounded-xl bg-black/55 border px-3 sm:px-4 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-[#A87D06]/70 ${
                     fieldErrors.last_name
                       ? "border-rose-400"
                       : "border-white/10"
@@ -242,7 +254,7 @@ export default function SignUp() {
                   placeholder="Ej. Paterno Materno"
                 />
                 {fieldErrors.last_name && (
-                  <p className="mt-1 text-sm text-rose-300">
+                  <p className="mt-1 text-xs sm:text-sm text-rose-300">
                     {fieldErrors.last_name}
                   </p>
                 )}
@@ -250,9 +262,12 @@ export default function SignUp() {
             </div>
 
             {/* Usuario & correo */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm opacity-90" htmlFor="username">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div className="space-y-1.5">
+                <label
+                  className="text-xs sm:text-sm opacity-90"
+                  htmlFor="username"
+                >
                   Usuario
                 </label>
                 <input
@@ -262,19 +277,22 @@ export default function SignUp() {
                   autoComplete="username"
                   required
                   aria-invalid={!!fieldErrors.username}
-                  className={`w-full h-12 rounded-xl bg-black/55 border px-4 focus:outline-none focus:ring-2 focus:ring-[#A87D06]/70 ${
+                  className={`w-full h-11 sm:h-12 rounded-xl bg-black/55 border px-3 sm:px-4 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-[#A87D06]/70 ${
                     fieldErrors.username ? "border-rose-400" : "border-white/10"
                   }`}
                 />
                 {fieldErrors.username && (
-                  <p className="mt-1 text-sm text-rose-300">
+                  <p className="mt-1 text-xs sm:text-sm text-rose-300">
                     {fieldErrors.username}
                   </p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm opacity-90" htmlFor="correo">
+              <div className="space-y-1.5">
+                <label
+                  className="text-xs sm:text-sm opacity-90"
+                  htmlFor="correo"
+                >
                   Correo
                 </label>
                 <input
@@ -285,13 +303,13 @@ export default function SignUp() {
                   autoComplete="email"
                   required
                   aria-invalid={!!fieldErrors.email}
-                  className={`w-full h-12 rounded-xl bg-black/55 border px-4 focus:outline-none focus:ring-2 focus:ring-[#A87D06]/70 ${
+                  className={`w-full h-11 sm:h-12 rounded-xl bg-black/55 border px-3 sm:px-4 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-[#A87D06]/70 ${
                     fieldErrors.email ? "border-rose-400" : "border-white/10"
                   }`}
                   placeholder="tucorreo@dominio.com"
                 />
                 {fieldErrors.email && (
-                  <p className="mt-1 text-sm text-rose-300">
+                  <p className="mt-1 text-xs sm:text-sm text-rose-300">
                     {fieldErrors.email}
                   </p>
                 )}
@@ -299,10 +317,13 @@ export default function SignUp() {
             </div>
 
             {/* Passwords con ojito + validación en vivo */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               {/* Contraseña */}
-              <div className="space-y-2">
-                <label className="text-sm opacity-90" htmlFor="contrasena">
+              <div className="space-y-1.5">
+                <label
+                  className="text-xs sm:text-sm opacity-90"
+                  htmlFor="contrasena"
+                >
                   Contraseña
                 </label>
                 <div className="relative">
@@ -315,16 +336,19 @@ export default function SignUp() {
                     required
                     minLength={8}
                     aria-invalid={showPwdErrorBorder}
-                    className={`w-full h-12 rounded-xl bg-black/55 border pr-12 pl-4 focus:outline-none
-                                focus:ring-2 focus:ring-[#A87D06]/70
-                                ${
-                                  showPwdErrorBorder
-                                    ? "border-rose-400"
-                                    : "border-white/10"
-                                }`}
+                    className={`
+                      w-full h-11 sm:h-12 rounded-xl bg-black/55 border
+                      pr-10 sm:pr-12 pl-3 sm:pl-4
+                      text-sm sm:text-base
+                      focus:outline-none focus:ring-2 focus:ring-[#A87D06]/70
+                      ${
+                        showPwdErrorBorder
+                          ? "border-rose-400"
+                          : "border-white/10"
+                      }
+                    `}
                     placeholder="••••••••"
                     aria-describedby="pwd-req"
-                    // 👇 bloquea copiar/cortar/arrastrar
                     onCopy={blockEvent}
                     onCut={blockEvent}
                     onDragStart={blockEvent}
@@ -335,12 +359,15 @@ export default function SignUp() {
                     onToggle={() => setShowPass1((s) => !s)}
                     disabled={submitting}
                     error={showPwdErrorBorder}
-                    className="absolute inset-y-0 right-0 px-3"
+                    className="absolute inset-y-0 right-1 sm:right-2 px-2 sm:px-3"
                   />
                 </div>
 
-                {/* Checklist de requisitos (aria-live para feedback accesible) */}
-                <div className="mt-2 space-y-1 text-xs" aria-live="polite">
+                <div
+                  id="pwd-req"
+                  className="mt-2 space-y-1 text-[11px] sm:text-xs"
+                  aria-live="polite"
+                >
                   {Object.entries(PWD_RULES).map(([key, rule]) => {
                     const ok = pwdChecks[key];
                     return (
@@ -362,16 +389,16 @@ export default function SignUp() {
                 </div>
 
                 {fieldErrors.password && (
-                  <p className="mt-1 text-sm text-rose-300">
+                  <p className="mt-1 text-xs sm:text-sm text-rose-300">
                     {fieldErrors.password}
                   </p>
                 )}
               </div>
 
               {/* Confirmar contraseña */}
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <label
-                  className="text-sm opacity-90"
+                  className="text-xs sm:text-sm opacity-90"
                   htmlFor="confirmarContrasena"
                 >
                   Confirmar contraseña
@@ -385,41 +412,48 @@ export default function SignUp() {
                     autoComplete="new-password"
                     required
                     aria-invalid={showConfirmErrorBorder}
-                    className={`w-full h-12 rounded-xl bg-black/55 border pr-12 pl-4 focus:outline-none
-                                focus:ring-2 focus:ring-[#A87D06]/70
-                                ${
-                                  showConfirmErrorBorder
-                                    ? "border-rose-400"
-                                    : "border-white/10"
-                                }`}
+                    className={`
+                      w-full h-11 sm:h-12 rounded-xl bg-black/55 border
+                      pr-10 sm:pr-12 pl-3 sm:pl-4
+                      text-sm sm:text-base
+                      focus:outline-none focus:ring-2 focus:ring-[#A87D06]/70
+                      ${
+                        showConfirmErrorBorder
+                          ? "border-rose-400"
+                          : "border-white/10"
+                      }
+                    `}
                     placeholder="••••••••"
-                    // 👇 bloquea pegar, copiar/cortar y drop
                     onPaste={handleConfirmPaste}
                     onDrop={blockEvent}
                     onCopy={blockEvent}
                     onCut={blockEvent}
                   />
-                  {/* Aviso accesible cuando intenta pegar */}
-                  {confirmPasteWarn && (
-                    <p
-                      className="mt-1 text-sm text-amber-300"
-                      role="status"
-                      aria-live="polite"
-                    >
-                      Por seguridad, no puedes pegar en “Confirmar contraseña”.
-                      Escríbela manualmente.
-                    </p>
-                  )}
                   <PasswordToggleButton
                     visible={showPass2}
                     onToggle={() => setShowPass2((s) => !s)}
                     disabled={submitting}
                     error={showConfirmErrorBorder}
-                    className="absolute inset-y-0 right-0 px-3"
+                    className="absolute inset-y-0 right-1 sm:right-2 px-2 sm:px-3"
                   />
                 </div>
+
+                {confirmPasteWarn && (
+                  <p
+                    className="mt-1 text-xs sm:text-sm text-amber-300"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    Por seguridad, no puedes pegar en “Confirmar contraseña”.
+                    Escríbela manualmente.
+                  </p>
+                )}
+
                 {!passwordsMatch && form.confirmarContrasena.length > 0 && (
-                  <p className="mt-1 text-sm text-rose-300" aria-live="polite">
+                  <p
+                    className="mt-1 text-xs sm:text-sm text-rose-300"
+                    aria-live="polite"
+                  >
                     Las contraseñas no coinciden.
                   </p>
                 )}
@@ -429,13 +463,17 @@ export default function SignUp() {
             <button
               type="submit"
               disabled={submitting || !isPwdValid || !passwordsMatch}
-              className="w-full sm:w-56 h-12 rounded-xl bg-[#08D9D6] text-[#0e0e0e] font-semibold
-                         hover:bg-[#08c9c6] active:scale-[0.99] disabled:opacity-60"
+              className="
+                w-full sm:w-56 h-11 sm:h-12 rounded-xl
+                bg-[#08D9D6] text-[#0e0e0e] font-semibold
+                text-sm sm:text-base
+                hover:bg-[#08c9c6] active:scale-[0.99] disabled:opacity-60
+              "
             >
               {submitting ? "Creando cuenta..." : "Registrarse"}
             </button>
 
-            <p className="text-center text-sm text-white/80">
+            <p className="text-center text-xs sm:text-sm text-white/80">
               ¿Ya tienes cuenta?{" "}
               <Link
                 to="/signin"

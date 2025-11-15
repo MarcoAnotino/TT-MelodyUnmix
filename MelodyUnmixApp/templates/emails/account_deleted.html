@@ -1,0 +1,19 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+  <h1>Tu cuenta ha sido eliminada</h1>
+
+  <p>Hola <strong>{{ username }}</strong>,</p>
+
+  <p>
+    Te confirmamos que tu cuenta en <strong>Melody Unmix</strong> ha sido
+    eliminada correctamente.
+  </p>
+
+  <p>
+    Si no reconoces esta acción o crees que es un error, por favor contáctanos en:
+    <a href="mailto:{{ support_email }}">{{ support_email }}</a>.
+  </p>
+
+  <p>Gracias por haber usado Melody Unmix.</p>
+{% endblock %}

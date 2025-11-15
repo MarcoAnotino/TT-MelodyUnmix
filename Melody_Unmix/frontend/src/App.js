@@ -17,6 +17,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ResetDone from "./pages/ResetDone";
 import ResetVerify from "./pages/ResetVerify";
+import DeleteAccount from "./pages/DeleteAccount";
+
 
 
 // ---------- Guard de ruta protegida ----------
@@ -90,6 +92,8 @@ export default function App() {
           <Route path="/reset-verify" element={<ResetVerify />} />
           <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
           <Route path="/reset-done" element={<ResetDone />} />
+
+          <Route path="/delete-account" element={<DeleteAccount />} />
 
           {/* Área autenticada */}
           <Route

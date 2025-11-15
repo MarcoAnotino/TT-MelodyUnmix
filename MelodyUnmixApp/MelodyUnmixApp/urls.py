@@ -4,6 +4,8 @@ from django.http import JsonResponse
 from django.db import connections
 from django.conf import settings
 from django.shortcuts import render
+from django.conf.urls.static import static  
+
 
 
 def api_home(request):
@@ -56,3 +58,7 @@ urlpatterns = [
     # Página de prueba
     path("prueba-demucs/", pagina_prueba),
 ]
+
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

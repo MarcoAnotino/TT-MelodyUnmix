@@ -132,6 +132,15 @@ export async function me() {
   return data;
 }
 
+export async function updateProfile(formData) {
+  const { data } = await api.patch("/api/users/me/", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return data;
+}
+
 // ---------- Endpoints de Reseteo de contraseña ----------
 // Solicitar envío del código (ya lo llamas en ForgotPassword)
 export async function requestPasswordReset(email) {
@@ -153,3 +162,8 @@ export async function resetPasswordConfirm({ uid, token, new_password, re_new_pa
   return data; // { ok: true, message: ... }
 }
 
+export async function deleteAccount(payload) {
+  // payload: { current_password, confirm_password, phrase }
+  const { data } = await api.post("/api/users/delete-account/", payload);
+  return data;
+}

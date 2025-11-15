@@ -14,6 +14,7 @@ from .views_password_reset import (
     PasswordResetVerifyView,
     PasswordResetConfirmView,
 )
+from .views import DeleteAccountView
 
 app_name = "users"
 
@@ -31,5 +32,7 @@ urlpatterns = [
     path("auth/password-reset/confirm/", PasswordResetConfirmView.as_view(), name="password_reset_confirm"),
 
     path("me/", UserDetailView.as_view(), name="me"),
+    path("delete-account/", DeleteAccountView.as_view(), name="delete_account"),  
+
     path("", UserListView.as_view(), name="user-list"),
 ]

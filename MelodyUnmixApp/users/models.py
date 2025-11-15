@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
+from django.core.validators import FileExtensionValidator
 
 class Usuario(AbstractUser):
     # Hereda username, email, password y más
@@ -19,13 +20,20 @@ class Usuario(AbstractUser):
 
     email = models.EmailField(unique=True)
 
+    avatar = models.ImageField(
+        upload_to="avatars/",
+        null=True,
+        blank=True,
+        validators=[FileExtensionValidator(["jpg", "jpeg", "png", "webp"])],
+    )
+
     def __str__(self):
         return self.username
 
 
 class PasswordResetCode(models.Model):
     email = models.EmailField(db_index=True)
-    code = models.CharField(max_length=32, db_index=True)  # 6-10 chars reales; dejo 32 por flex
+    code = models.CharField(max_length=32, db_index=True)  
     created_at = models.DateTimeField(auto_now_add=True)
     used_at = models.DateTimeField(null=True, blank=True)
     attempts = models.PositiveIntegerField(default=0)

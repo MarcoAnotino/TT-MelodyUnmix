@@ -33,7 +33,7 @@ const normalizeStatus = (raw) => {
 };
 
 export default function UploadedScreen() {
-  const { id } = useParams(); // pensado para /tracks/:id
+  const { id } = useParams(); // /tracks/:id
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -46,7 +46,8 @@ export default function UploadedScreen() {
   const isReady = status === "procesado";
 
   const statusBadge = useMemo(() => {
-    const base = "px-3 py-1 rounded-full text-sm flex items-center gap-2";
+    const base =
+      "px-3 py-1 rounded-full text-xs sm:text-sm flex items-center gap-2";
     if (status === "procesado")
       return (
         <span className={`${base} bg-emerald-500/20 text-emerald-300`}>
@@ -77,7 +78,7 @@ export default function UploadedScreen() {
     if (!id) navigate("/app", { replace: true });
   }, [id, navigate]);
 
-  // Polling inteligente (pausa en fondo y backoff); se detiene en listo/error/401/404
+  // Polling inteligente; se detiene en listo/error/401/404
   useEffect(() => {
     if (!id) return;
     let alive = true;
@@ -92,15 +93,16 @@ export default function UploadedScreen() {
       }
       try {
         const { data } = await api.get(`/api/audios/${id}/status`);
-        setStatus(normalizeStatus(data?.status));
+        const norm = normalizeStatus(data?.status);
+        setStatus(norm);
         if (data?.title) setTitle(stripExtension(data.title));
         setError("");
 
-        if (["procesado", "error"].includes(normalizeStatus(data?.status))) {
+        if (norm === "procesado" || norm === "error") {
           alive = false;
           return;
         }
-        delay = 3000; // reset backoff si ok
+        delay = 3000;
       } catch (e) {
         const code = e?.response?.status;
         if (code === 401) {
@@ -113,7 +115,7 @@ export default function UploadedScreen() {
           alive = false;
           return;
         }
-        delay = Math.min(delay + 3000, 15000); // backoff
+        delay = Math.min(delay + 3000, 15000);
       } finally {
         if (alive) timer = setTimeout(tick, delay);
       }
@@ -166,23 +168,25 @@ export default function UploadedScreen() {
       <Header />
 
       {/* Encabezado canción */}
-      <section className="max-w-5xl mx-auto mt-16 px-6">
-        <p className="text-sm uppercase tracking-[0.15em] text-white/50">
+      <section className="max-w-5xl mx-auto mt-20 sm:mt-16 px-4 sm:px-6">
+        <p className="text-[11px] sm:text-sm uppercase tracking-[0.15em] text-white/50 text-center sm:text-left">
           Resultado del procesamiento
         </p>
-        <div className="mt-3 flex items-center gap-4 flex-wrap">
-          <h1 className="text-3xl sm:text-5xl font-semibold">{title}</h1>
-          {statusBadge}
+        <div className="mt-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+          <h1 className="text-[clamp(24px,6vw,40px)] font-semibold text-center sm:text-left">
+            {title}
+          </h1>
+          <div className="flex justify-center sm:justify-start">{statusBadge}</div>
         </div>
-        <p className="text-[#e7e7e7] text-lg sm:text-2xl mt-4">
+        <p className="text-[#e7e7e7] text-[clamp(14px,4.5vw,20px)] mt-4 text-center sm:text-left">
           {isReady
             ? "Tu canción está lista. Descarga las pistas individuales o el paquete completo."
             : "Estamos separando tu canción en stems con nuestra IA. Esto puede tardar unos instantes…"}
         </p>
 
         {!isReady && !error && (
-          <div className="mt-4 flex items-center gap-3 text-sm text-white/60">
-            <div className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
+          <div className="mt-4 flex flex-col sm:flex-row items-center gap-3 text-xs sm:text-sm text-white/60">
+            <div className="w-full sm:w-52 h-1 rounded-full bg-white/10 overflow-hidden">
               <div className="h-full w-1/3 rounded-full bg-white/40 animate-[pulse_1.8s_ease-in-out_infinite]" />
             </div>
             <span>Procesando audio…</span>
@@ -190,16 +194,16 @@ export default function UploadedScreen() {
         )}
       </section>
 
-      <main className="max-w-5xl mx-auto mt-12 px-6 pb-24">
-        {/* Grid de stems */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-16 gap-y-14 place-items-center">
+      <main className="max-w-5xl mx-auto mt-10 sm:mt-12 px-4 sm:px-6 pb-24">
+        {/* Grid de stems (circulares) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 sm:gap-x-16 gap-y-10 sm:gap-y-14 place-items-center">
           {STEMS.map((s) => (
             <div key={s.key} className="flex flex-col items-center">
               <button
                 disabled={!isReady || loading}
                 onClick={() => handleDownload(s.key)}
                 className={
-                  "rounded-full p-2 transition-transform " +
+                  "rounded-full p-1 sm:p-2 transition-transform " +
                   (isReady && !loading
                     ? "hover:scale-[1.03]"
                     : "opacity-60 grayscale cursor-not-allowed")
@@ -207,28 +211,30 @@ export default function UploadedScreen() {
                 aria-label={`Descargar ${s.label}`}
                 title={isReady ? `Descargar ${s.label}` : "Procesando..."}
               >
-                <div className="rounded-full bg-black/20 p-3 shadow-[0_0_40px_rgba(0,0,0,0.6)]">
+                <div className="rounded-full bg-black/20 p-2 sm:p-3 shadow-[0_0_40px_rgba(0,0,0,0.6)]">
                   <img
                     src={s.img}
                     alt={s.label}
-                    className="w-[196px] h-[196px] object-cover rounded-full"
+                    className="w-[150px] h-[150px] sm:w-[196px] sm:h-[196px] object-cover rounded-full"
                   />
                 </div>
               </button>
-              <span className="mt-4 text-2xl font-medium">{s.label}</span>
-              <span className="mt-1 text-sm text-white/60">
+              <span className="mt-3 sm:mt-4 text-xl sm:text-2xl font-medium">
+                {s.label}
+              </span>
+              <span className="mt-1 text-xs sm:text-sm text-white/60">
                 {isReady ? "Listo para descargar" : "Aún procesando"}
               </span>
             </div>
           ))}
 
-          {/* Download All: ahora como un item más del grid */}
+          {/* Download All como un item más del grid */}
           <div className="flex flex-col items-center">
             <button
               disabled={!isReady || loading}
               onClick={() => handleDownload("all")}
               className={
-                "relative rounded-full p-2 transition-transform " +
+                "relative rounded-full p-1 sm:p-2 transition-transform " +
                 (isReady && !loading
                   ? "hover:scale-[1.04]"
                   : "opacity-60 grayscale cursor-not-allowed")
@@ -236,37 +242,39 @@ export default function UploadedScreen() {
               aria-label="Descargar todos"
               title={isReady ? "Descargar todos" : "Procesando..."}
             >
-              <div className="rounded-full bg-black/30 p-3 shadow-[0_0_50px_rgba(0,0,0,0.8)] border border-white/15">
+              <div className="rounded-full bg-black/30 p-2 sm:p-3 shadow-[0_0_50px_rgba(0,0,0,0.8)] border border-white/15">
                 <img
                   src={image6}
                   alt="Download All"
-                  className="w-[196px] h-[196px] object-cover rounded-full"
+                  className="w-[150px] h-[150px] sm:w-[196px] sm:h-[196px] object-cover rounded-full"
                 />
               </div>
               {isReady && (
-                <span className="absolute -top-2 -right-2 px-3 py-1 rounded-full text-xs bg-emerald-500 text-black font-semibold shadow-lg">
+                <span className="absolute -top-2 -right-2 px-3 py-1 rounded-full text-[10px] sm:text-xs bg-emerald-500 text-black font-semibold shadow-lg">
                   ZIP
                 </span>
               )}
             </button>
-            <span className="mt-4 text-2xl font-semibold">Download All</span>
-            <span className="mt-1 text-sm text-white/60">
+            <span className="mt-3 sm:mt-4 text-xl sm:text-2xl font-semibold">
+              Download All
+            </span>
+            <span className="mt-1 text-xs sm:text-sm text-white/60 text-center max-w-xs">
               Descarga todas las pistas en un solo archivo .zip
             </span>
           </div>
         </div>
 
         {/* Botones inferiores */}
-        <div className="mt-16 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+        <div className="mt-14 sm:mt-16 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
           <button
             onClick={() => navigate(-1)}
-            className="px-5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-sm sm:text-base"
+            className="w-full sm:w-auto px-5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-sm sm:text-base text-center"
           >
             Regresar
           </button>
           <button
             onClick={() => navigate("/app")}
-            className="px-5 py-2 rounded-xl bg-[#3e4070] hover:bg-[#4a4d8a] text-sm sm:text-base"
+            className="w-full sm:w-auto px-5 py-2 rounded-xl bg-[#3e4070] hover:bg-[#4a4d8a] text-sm sm:text-base text-center"
           >
             Ir a mis archivos
           </button>
@@ -276,7 +284,10 @@ export default function UploadedScreen() {
           <div className="max-w-5xl mx-auto mt-6">
             <div className="px-4 py-3 rounded-lg bg-rose-500/15 text-rose-300 border border-rose-400/20 text-sm sm:text-base">
               {error}{" "}
-              <button className="underline ml-2" onClick={() => navigate("/app")}>
+              <button
+                className="underline ml-1"
+                onClick={() => navigate("/app")}
+              >
                 Volver a mis archivos
               </button>
             </div>

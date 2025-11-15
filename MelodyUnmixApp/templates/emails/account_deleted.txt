@@ -1,0 +1,8 @@
+Hola {{ username }},
+
+Te confirmamos que tu cuenta en Melody Unmix ha sido eliminada correctamente.
+
+Si esto no lo hiciste tú o crees que es un error, por favor contáctanos a:
+{{ support_email }}
+
+Gracias por haber usado Melody Unmix.

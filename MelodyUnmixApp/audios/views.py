@@ -68,7 +68,6 @@ class AudioUploadView(APIView):
 
             ruta_guardada = os.path.join(input_dir, nombre_audio)
 
-            # 🔧 Guardar manualmente el archivo
             with open(ruta_guardada, "wb+") as destino:
                 for chunk in archivo_subido.chunks():
                     destino.write(chunk)
@@ -96,8 +95,22 @@ class AudioUploadView(APIView):
                 usuario=request.user
             )
 
-            # 4️⃣ Ejecutar Demucs en Docker
-            ruta_output = ejecutar_demucs(nombre_audio, usuario=request.user.username)
+            # 🔹 NUEVO: carpeta de salida única por usuario + audio
+            # Estructura: output_audio/user_<id>/audio_<id>/
+            output_root = os.path.join(
+                base_path,
+                "output_audio",
+                f"user_{request.user.id}",
+                f"audio_{audio_pg.id}",
+            )
+            os.makedirs(output_root, exist_ok=True)
+
+            # 4️⃣ Ejecutar Demucs en Docker usando esa carpeta como /output
+            ruta_output = ejecutar_demucs(
+                nombre_archivo=nombre_audio,
+                usuario=request.user.username,
+                output_dir=output_root,
+            )
 
             # 5️⃣ Registrar pistas separadas con tamaño real en MB
             stems = ["drums", "bass", "vocals", "other"]
@@ -107,12 +120,10 @@ class AudioUploadView(APIView):
             for stem in stems:
                 ruta_pista = os.path.join(ruta_output, f"{stem}.wav")
                 if os.path.exists(ruta_pista):
-                    # 🔹 Calcular tamaño real
                     tamano_bytes = os.path.getsize(ruta_pista)
                     tamano_mb = round(tamano_bytes / (1024 * 1024), 2)
                     total_mb += tamano_mb
 
-                    # 🔹 Crear registro en Postgres
                     pista_pg = PistaSeparada.objects.create(
                         nombre_pista=f"{nombre_audio}_{stem}",
                         instrumento=stem,
@@ -122,7 +133,6 @@ class AudioUploadView(APIView):
                     )
                     archivo_pg.pistas.add(pista_pg)
 
-                    # 🔹 Guardar también en Mongo
                     agregar_pista(audio_id_mongo, stem, ruta_pista, "wav", tamano_mb)
 
                     pistas_pg.append({
