@@ -6,6 +6,33 @@ import { loginEmail, me } from "../lib/api";
 import AlertCard from "../components/AlertCard";
 import PasswordToggleButton from "../components/PasswordToggleButton";
 
+function extractErrorMessage(err) {
+  const data = err?.response?.data;
+
+  if (!data || typeof data !== "object") {
+    return "Correo o contraseña inválidos.";
+  }
+
+  // Error en el campo email (correo no existe / cuenta desactivada)
+  if (data.email) {
+    const msg = Array.isArray(data.email) ? data.email[0] : data.email;
+    return msg || "Error con el correo.";
+  }
+
+  // Error en el campo password (contraseña incorrecta)
+  if (data.password) {
+    const msg = Array.isArray(data.password) ? data.password[0] : data.password;
+    return msg || "Contraseña incorrecta.";
+  }
+
+  // Mensaje genérico tipo {"detail": "..."}
+  if (typeof data.detail === "string") {
+    return data.detail;
+  }
+
+  return "Correo o contraseña inválidos.";
+}
+
 export default function SignIn() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -41,7 +68,7 @@ export default function SignIn() {
 
       navigate("/app");
     } catch (err) {
-      setErrMsg("Correo o contraseña inválidos.");
+      setErrMsg(extractErrorMessage(err));
       setErrOpen(true);
     } finally {
       setSubmitting(false);
