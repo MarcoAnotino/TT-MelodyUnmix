@@ -7,9 +7,32 @@ from .demucs_service import ejecutar_demucs
 from django.http import JsonResponse, FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from .services import get_collection
+from django.db import close_old_connections
+from bson import ObjectId 
+from pymongo.errors import PyMongoError
+
+import shutil
+import threading
+import traceback
 import zipfile
 import time 
 import os
+
+
+def safe_rm(path):
+    try:
+        if path and os.path.exists(path):
+            os.remove(path)
+    except Exception as e:
+        print("No se pudo borrar", path, e)
+
+def safe_rmtree(path):
+    """Borra recursivamente una carpeta si existe."""
+    try:
+        if path and os.path.exists(path):
+            shutil.rmtree(path)
+    except Exception as e:
+        print("No se pudo borrar carpeta", path, e)
 
 
 # -----------------
@@ -51,6 +74,8 @@ class MyUploadsView(APIView):
 # Subida de audio
 # -----------------
 class AudioUploadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
     def post(self, request):
         try:
             # 1️⃣ Obtener archivo y metadatos
@@ -61,13 +86,12 @@ class AudioUploadView(APIView):
             nombre_audio = archivo_subido.name
             formato = nombre_audio.split(".")[-1]
 
-            # 2️⃣ Guardar físicamente el archivo en input_audio/
             base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
             input_dir = os.path.join(base_path, "input_audio")
             os.makedirs(input_dir, exist_ok=True)
 
+            # 2️⃣ Guardar físicamente el archivo en input_audio/
             ruta_guardada = os.path.join(input_dir, nombre_audio)
-
             with open(ruta_guardada, "wb+") as destino:
                 for chunk in archivo_subido.chunks():
                     destino.write(chunk)
@@ -95,73 +119,28 @@ class AudioUploadView(APIView):
                 usuario=request.user
             )
 
-            # 🔹 NUEVO: carpeta de salida única por usuario + audio
-            # Estructura: output_audio/user_<id>/audio_<id>/
-            output_root = os.path.join(
-                base_path,
-                "output_audio",
-                f"user_{request.user.id}",
-                f"audio_{audio_pg.id}",
-            )
-            os.makedirs(output_root, exist_ok=True)
-
-            # 4️⃣ Ejecutar Demucs en Docker usando esa carpeta como /output
-            ruta_output = ejecutar_demucs(
-                nombre_archivo=nombre_audio,
-                usuario=request.user.username,
-                output_dir=output_root,
+            # 4️⃣ Lanzar procesamiento en background (Demucs + creación de pistas)
+            lanzar_procesamiento_asincrono(
+                audio_pg_id=audio_pg.id,
+                archivo_pg_id=archivo_pg.id,
+                nombre_audio=nombre_audio,
+                ruta_guardada=ruta_guardada,
+                user_id=request.user.id,
+                username=request.user.username,
+                audio_id_mongo=audio_id_mongo,
             )
 
-            # 5️⃣ Registrar pistas separadas con tamaño real en MB
-            stems = ["drums", "bass", "vocals", "other"]
-            pistas_pg = []
-            total_mb = 0.0
-
-            for stem in stems:
-                ruta_pista = os.path.join(ruta_output, f"{stem}.wav")
-                if os.path.exists(ruta_pista):
-                    tamano_bytes = os.path.getsize(ruta_pista)
-                    tamano_mb = round(tamano_bytes / (1024 * 1024), 2)
-                    total_mb += tamano_mb
-
-                    pista_pg = PistaSeparada.objects.create(
-                        nombre_pista=f"{nombre_audio}_{stem}",
-                        instrumento=stem,
-                        ruta_pista_out=ruta_pista,
-                        duracion=audio_pg.duracion,
-                        tamano_mb=tamano_mb
-                    )
-                    archivo_pg.pistas.add(pista_pg)
-
-                    agregar_pista(audio_id_mongo, stem, ruta_pista, "wav", tamano_mb)
-
-                    pistas_pg.append({
-                        "stem": stem,
-                        "tamano_mb": tamano_mb,
-                        "ruta": ruta_pista
-                    })
-
-            # 6️⃣ Actualizar estado final y tamaño total
-            audio_pg.estado = "procesado"
-            audio_pg.tamano_mb = total_mb
-            audio_pg.save()
-
-            # 🧹 (Opcional) eliminar archivo original de entrada
-            try:
-                os.remove(ruta_guardada)
-            except Exception as err:
-                print(f"⚠️ No se pudo borrar el archivo original: {err}")
-
+            # 5️⃣ Responder rápido al frontend
             return Response({
-                "mensaje": "✅ Separación completada correctamente.",
+                "mensaje": "✅ Archivo recibido. Procesamiento iniciado en segundo plano.",
                 "audio_id_mongo": audio_id_mongo,
                 "audio_id_postgres": audio_pg.id,
                 "archivo_id_postgres": archivo_pg.id,
-                "pistas_generadas": pistas_pg
             }, status=201)
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+
 
 
 # -----------------
@@ -260,13 +239,23 @@ class AudioStatusView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, audio_id):
-        audio = get_object_or_404(ProcesamientoAudio, id=audio_id)
-        # puedes validar propiedad vía ArchivoAudio + request.user si quieres
+        archivo = get_object_or_404(
+            ArchivoAudio.objects.select_related("audio_in"),
+            audio_in__id=audio_id,
+            usuario=request.user,
+        )
+        audio = archivo.audio_in
+
         return Response({
             "id": audio.id,
             "status": audio.estado,   # "procesando" | "procesado" | "error"
             "title": audio.nombre_audio,
+            "tamano_mb": float(audio.tamano_mb) if audio.tamano_mb is not None else None,
+            "duracion": audio.duracion,
+            "fecha_procesamiento": audio.fecha_procesamiento,
+            "pistas_count": archivo.pistas.count(),
         }, status=200)
+
 
 # MelodyUnmixApp/audios/views.py (añade)
 class DownloadStemView(APIView):
@@ -411,18 +400,34 @@ class DeleteAudioView(APIView):
         archivo = get_object_or_404(ArchivoAudio, audio_in__id=audio_id, usuario=request.user)
         ai = archivo.audio_in
 
+        user_id = request.user.id
+        audio_pg_id = ai.id
+
         # 2) borrar archivos físicos
         safe_rm(ai.ruta_almacenamiento_in)
         for pista in archivo.pistas.all():
             safe_rm(pista.ruta_pista_out)
 
+        # borrar la carpeta completa de salida (incluyendo el zip y stems)
+        base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        output_root = os.path.join(
+            base_path,
+            "output_audio",
+            f"user_{user_id}",
+            f"audio_{audio_pg_id}"
+        )
+        safe_rmtree(output_root)
+
         # 3) borrar en Mongo (si guardas mongo_id es mejor; ver nota abajo)
-        col = get_collection()
-        col.delete_many({
-            "usuario_id": str(request.user.id),
-            "nombre_archivo": ai.nombre_audio
-            # o "url_archivo": ai.ruta_almacenamiento_in
-        })
+        try:
+            col = get_collection()
+            col.delete_many({
+                "usuario_id": str(request.user.id),
+                "nombre_archivo": ai.nombre_audio
+                # o "url_archivo": ai.ruta_almacenamiento_in
+            })
+        except Exception as e:
+            print("No se pudo borrar en Mongo: ", e)
 
         # 4) borrar objetos de DB
         PistaSeparada.objects.filter(archivos=archivo).delete()
@@ -430,3 +435,144 @@ class DeleteAudioView(APIView):
         ai.delete()
 
         return Response({"deleted": True})
+
+# ===========================
+# Procesamiento asíncrono Demucs
+# ===========================
+
+def procesar_audio_en_background(
+    audio_pg_id,
+    archivo_pg_id,
+    nombre_audio,
+    ruta_guardada,
+    user_id,
+    username,
+    audio_id_mongo=None,
+):
+    """
+    Se ejecuta en un hilo aparte:
+    - Llama a Demucs
+    - Crea las pistas en Postgres
+    - Actualiza tamaño total y estado
+    - Actualiza Mongo (si audio_id_mongo no es None)
+    """
+    from .models import ProcesamientoAudio, ArchivoAudio, PistaSeparada
+    from .demucs_service import ejecutar_demucs
+    from .services import agregar_pista, get_collection
+    from .views import safe_rm  # ya lo tienes más abajo en este mismo archivo
+
+    close_old_connections()
+
+    try:
+        base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+        # Carpeta de salida única por usuario + audio
+        output_root = os.path.join(
+            base_path,
+            "output_audio",
+            f"user_{user_id}",
+            f"audio_{audio_pg_id}",
+        )
+        os.makedirs(output_root, exist_ok=True)
+
+        # 1️⃣ Ejecutar Demucs
+        ruta_output = ejecutar_demucs(
+            nombre_archivo=nombre_audio,
+            usuario=username,
+            output_dir=output_root,
+        )
+
+        # 2️⃣ Cargar objetos desde DB
+        audio_pg = ProcesamientoAudio.objects.get(id=audio_pg_id)
+        archivo_pg = ArchivoAudio.objects.get(id=archivo_pg_id)
+
+        # 3️⃣ Registrar pistas separadas con tamaño real en MB
+        stems = ["drums", "bass", "vocals", "other"]
+        total_mb = 0.0
+
+        for stem in stems:
+            ruta_pista = os.path.join(ruta_output, f"{stem}.wav")
+            if os.path.exists(ruta_pista):
+                tamano_bytes = os.path.getsize(ruta_pista)
+                tamano_mb = round(tamano_bytes / (1024 * 1024), 2)
+                total_mb += tamano_mb
+
+                pista_pg = PistaSeparada.objects.create(
+                    nombre_pista=f"{nombre_audio}_{stem}",
+                    instrumento=stem,
+                    ruta_pista_out=ruta_pista,
+                    duracion=audio_pg.duracion,
+                    tamano_mb=tamano_mb,
+                )
+                archivo_pg.pistas.add(pista_pg)
+
+                # Mongo (si queremos reflejar también allí)
+                if audio_id_mongo:
+                    agregar_pista(
+                        audio_id=audio_id_mongo,
+                        instrumento=stem,
+                        url_archivo=ruta_pista,
+                        formato="wav",
+                        tamano_mb=tamano_mb,
+                    )
+
+        # 4️⃣ Actualizar estado final y tamaño total en Postgres
+        audio_pg.estado = "procesado"
+        audio_pg.tamano_mb = total_mb
+        audio_pg.save()
+
+        # 5️⃣ Actualizar estado en Mongo (opcional pero recomendable)
+        if audio_id_mongo:
+            col = get_collection()
+            col.update_one(
+                {"_id": ObjectId(audio_id_mongo)},
+                {"$set": {"estado_proc": "procesado"}},
+            )
+
+    except Exception as e:
+        print("❌ Error en procesamiento asíncrono:", e)
+        print(traceback.format_exc())
+        try:
+            audio_pg = ProcesamientoAudio.objects.get(id=audio_pg_id)
+            audio_pg.estado = "error"
+            audio_pg.save()
+        except Exception:
+            pass
+
+        if audio_id_mongo:
+            try:
+                col = get_collection()
+                col.update_one(
+                    {"_id": ObjectId(audio_id_mongo)},
+                    {"$set": {"estado_proc": "error"}},
+                )
+            except Exception:
+                pass
+
+    finally:
+        # Intentar borrar el archivo original (como ya hacías)
+        try:
+            safe_rm(ruta_guardada)
+        except Exception:
+            pass
+        close_old_connections()
+
+
+def lanzar_procesamiento_asincrono(
+    audio_pg_id,
+    archivo_pg_id,
+    nombre_audio,
+    ruta_guardada,
+    user_id,
+    username,
+    audio_id_mongo=None,
+):
+    """
+    Crea y lanza el hilo en background.
+    """
+    hilo = threading.Thread(
+        target=procesar_audio_en_background,
+        args=(audio_pg_id, archivo_pg_id, nombre_audio, ruta_guardada, user_id, username, audio_id_mongo),
+        daemon=True,
+    )
+    hilo.start()

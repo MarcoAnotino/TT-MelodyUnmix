@@ -164,15 +164,6 @@ body {
   overflow-y: auto;     /* solo body scrollea */
 }
 
-/* --- Fail-safe para ScrollReveal --- */
-html:not(.sr-ready) main,
-html:not(.sr-ready) section,
-html:not(.sr-ready) header.sticky {
-  opacity: 1 !important;
-  transform: none !important;
-  visibility: visible !important;
-}
-
 /* Avatares redondos con aro sutil */
 .team-avatar {
   width: 196px;

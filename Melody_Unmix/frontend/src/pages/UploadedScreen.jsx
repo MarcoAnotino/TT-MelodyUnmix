@@ -130,12 +130,23 @@ export default function UploadedScreen() {
 
   // Descarga usando api (incluye Authorization)
   const handleDownload = async (stemKey) => {
+    if (!id || !isReady || loading) return;
+  
     setLoading(true);
+  
     try {
       const res = await api.get(`/api/audios/${id}/download/${stemKey}`, {
         responseType: "blob",
+        // Acepta 404 dentro del try para poder dar mensaje específico
+        validateStatus: (status) =>
+          (status >= 200 && status < 300) || status === 404,
       });
-
+  
+      if (res.status === 404) {
+        alert("No hay pistas disponibles para este audio.");
+        return;
+      }
+  
       const dispo = res.headers["content-disposition"] || "";
       let filename;
       const m = dispo.match(/filename\*=UTF-8''([^;]+)|filename="?([^"]+)"?/i);
@@ -147,7 +158,7 @@ export default function UploadedScreen() {
         const ext = isZip ? "zip" : "wav";
         filename = `${(title || "audio").replace(/\s+/g, "_")}-${stemKey}.${ext}`;
       }
-
+  
       const blobUrl = URL.createObjectURL(new Blob([res.data]));
       const a = document.createElement("a");
       a.href = blobUrl;
@@ -156,12 +167,22 @@ export default function UploadedScreen() {
       a.click();
       a.remove();
       URL.revokeObjectURL(blobUrl);
-    } catch {
-      alert("No se pudo descargar este archivo. Verifica que está disponible.");
+    } catch (err) {
+      console.error("Error descargando stem:", err);
+      const status = err?.response?.status;
+      if (status === 401) {
+        // En teoría el interceptor ya hizo refresh y reintento;
+        // si aún así caemos aquí, es que ya no hay sesión válida.
+        alert("Tu sesión expiró. Inicia sesión nuevamente.");
+      } else {
+        alert("No se pudo descargar este archivo. Verifica que está disponible.");
+      }
     } finally {
-      setTimeout(() => setLoading(false), 500);
+      setTimeout(() => setLoading(false), 400);
     }
   };
+  
+
 
   return (
     <div className="min-h-screen w-full bg-[linear-gradient(180deg,rgba(51,60,78,1)_3%,rgba(37,42,52,1)_49%,rgba(21,21,22,1)_95%)] text-white">

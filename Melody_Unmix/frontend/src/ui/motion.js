@@ -1,4 +1,4 @@
-// Reutilizable para cards/modals
+// ui/motion.js
 export const easeOut = [0.22, 0.61, 0.36, 1];
 export const easeIn  = [0.4, 0, 1, 1];
 

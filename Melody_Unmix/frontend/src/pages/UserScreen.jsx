@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import { api, me } from "../lib/api";
 import { validateAudioFile } from "../utils/fileValidation";
+import AlertCard from "../components/AlertCard";
 
 /** Formatea segundos a M:SS */
 function formatSecondsToMSS(sec) {
@@ -75,6 +76,12 @@ export default function UserScreen() {
   const [uploading, setUploading] = useState(false);
   const [deletingIds, setDeletingIds] = useState(new Set());
   const [isDragging, setIsDragging] = useState(false);
+
+  const [uploadErrorOpen, setUploadErrorOpen] = useState(false);
+  const [uploadErrorMsg, setUploadErrorMsg] = useState("");
+
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   // Detener polling si hay logout global
   useEffect(() => {
@@ -162,7 +169,29 @@ export default function UserScreen() {
             : "Procesando…";
 
         setRows((prev) =>
-          prev.map((r) => (r.id === audioId ? { ...r, estatus: label } : r))
+          prev.map((r) =>
+            r.id === audioId
+              ? {
+                  ...r,
+                  estatus: label,
+                  tamano_mb:
+                    data.tamano_mb !== undefined && data.tamano_mb !== null
+                      ? data.tamano_mb
+                      : r.tamano_mb,
+                  duracion:
+                    data.duracion !== undefined && data.duracion !== null
+                      ? data.duracion
+                      : r.duracion,
+                  fecha_procesamiento:
+                    data.fecha_procesamiento ?? r.fecha_procesamiento,
+                  pistas_count:
+                    data.pistas_count !== undefined &&
+                    data.pistas_count !== null
+                      ? data.pistas_count
+                      : r.pistas_count,
+                }
+              : r
+          )
         );
 
         if (label === "Procesado" || label === "Error") {
@@ -199,7 +228,8 @@ export default function UserScreen() {
 
     const validation = validateAudioFile(file);
     if (!validation.ok) {
-      alert(validation.message);
+      setUploadErrorMsg(validation.message);
+      setUploadErrorOpen(true);
       return;
     }
 
@@ -217,6 +247,9 @@ export default function UserScreen() {
         titulo: baseTitle,
         duracion: durationSec,
         estatus: "Subiendo…",
+        tamano_mb: tamanoMB,
+        pistas_count: 0,
+        fecha_procesamiento: null,
       },
       ...prev,
     ]);
@@ -244,6 +277,7 @@ export default function UserScreen() {
             : r
         )
       );
+
       if (audioId) startPolling(audioId);
     } catch {
       setRows((prev) =>
@@ -251,7 +285,10 @@ export default function UserScreen() {
           r.id === tempKey ? { ...r, estatus: "Error al subir" } : r
         )
       );
-      alert("Error subiendo el archivo. Verifica autenticación y backend.");
+      setUploadErrorMsg(
+        "Error subiendo el archivo. Verifica tu conexión y vuelve a intentar."
+      );
+      setUploadErrorOpen(true);
     } finally {
       setUploading(false);
     }
@@ -293,14 +330,13 @@ export default function UserScreen() {
 
   async function handleDelete(audioId) {
     if (!audioId) return;
-    if (!window.confirm("¿Eliminar este audio definitivamente?")) return;
-
+  
     setDeletingIds((prev) => new Set(prev).add(audioId));
-
+  
     if (timersRef.current[audioId]) {
       timersRef.current[audioId].stop?.();
     }
-
+  
     try {
       await api.delete(`/api/audios/${audioId}/`);
       setRows((prev) => prev.filter((r) => r.id !== audioId));
@@ -315,15 +351,19 @@ export default function UserScreen() {
     }
   }
 
+  function requestDelete(audioId, title) {
+    if (!audioId) return;
+    setPendingDelete({ id: audioId, title });
+    setConfirmDeleteOpen(true);
+  }
+  
+
   function handleGoToDownload(audioId, title) {
     if (!audioId) return;
     navigate(`/tracks/${audioId}`, { state: { title } });
   }
 
-  const totalPistas = rows.reduce(
-    (acc, r) => acc + (r.pistas_count || 0),
-    0
-  );
+  const totalPistas = rows.reduce((acc, r) => acc + (r.pistas_count || 0), 0);
 
   const ultimoProcesado = rows[0]?.fecha_procesamiento;
 
@@ -381,6 +421,12 @@ export default function UserScreen() {
           className="hidden"
           onChange={handleFileChange}
         />
+        <AlertCard
+          open={uploadErrorOpen}
+          title="No pudimos subir tu archivo"
+          description={uploadErrorMsg}
+          onClose={() => setUploadErrorOpen(false)}
+        />
       </section>
 
       {/* Dashboard + lista */}
@@ -429,8 +475,8 @@ export default function UserScreen() {
           <div className="space-y-3">
             {rows.length === 0 ? (
               <div className="px-4 py-8 text-center text-white/70 rounded-2xl border border-dashed border-white/10 text-sm sm:text-base">
-                Aún no has subido archivos. Sube tu primera canción para ver aquí
-                el historial.
+                Aún no has subido archivos. Sube tu primera canción para ver
+                aquí el historial.
               </div>
             ) : (
               rows.map((row) => (
@@ -479,23 +525,24 @@ export default function UserScreen() {
                   {/* Acciones */}
                   <div className="w-full flex flex-col sm:flex-row sm:justify-end gap-2">
                     {row.estatus === "Procesado" && (
-                      <button
-                        onClick={() =>
-                          handleGoToDownload(row.id, row.titulo)
-                        }
-                        className="inline-flex items-center justify-center px-3 py-2 rounded-xl bg-emerald-500/20 text-emerald-200 text-xs sm:text-sm hover:bg-emerald-500/30 w-full sm:w-auto"
-                      >
-                        Ver pistas
-                      </button>
-                    )}
+                      <>
+                        <button
+                          onClick={() => handleGoToDownload(row.id, row.titulo)}
+                          className="inline-flex items-center justify-center px-3 py-2 rounded-xl bg-emerald-500/20 text-emerald-200 text-xs sm:text-sm hover:bg-emerald-500/30 w-full sm:w-auto"
+                        >
+                          Ver pistas
+                        </button>
 
-                    <button
-                      onClick={() => handleDelete(row.id)}
-                      disabled={!row.id || deletingIds.has(row.id)}
-                      className="inline-flex items-center justify-center px-3 py-2 rounded-xl bg-rose-600/20 text-rose-200 text-xs sm:text-sm hover:bg-rose-600/30 disabled:opacity-50 w-full sm:w-auto"
-                    >
-                      Eliminar
-                    </button>
+                        <button
+  onClick={() => requestDelete(row.id, row.titulo)}
+  disabled={!row.id || deletingIds.has(row.id)}
+  className="inline-flex items-center justify-center px-3 py-2 rounded-xl bg-rose-600/20 text-rose-200 text-xs sm:text-sm hover:bg-rose-600/30 disabled:opacity-50 w-full sm:w-auto"
+>
+  Eliminar
+</button>
+
+                      </>
+                    )}
                   </div>
                 </div>
               ))
@@ -503,6 +550,43 @@ export default function UserScreen() {
           </div>
         </div>
       </section>
+      {confirmDeleteOpen && (
+  <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4">
+    <div className="w-full max-w-sm rounded-2xl bg-[#181924] border border-white/10 p-5 shadow-2xl">
+      <h2 className="text-lg font-semibold mb-2">¿Eliminar archivo?</h2>
+      <p className="text-sm text-white/70 mb-4">
+        ¿Seguro que quieres eliminar{" "}
+        <span className="font-medium text-white">
+          “{pendingDelete?.title || "esta canción"}”
+        </span>
+        ? Esta acción no se puede deshacer.
+      </p>
+      <div className="flex justify-end gap-2">
+        <button
+          onClick={() => {
+            setConfirmDeleteOpen(false);
+            setPendingDelete(null);
+          }}
+          className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-sm"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={async () => {
+            const id = pendingDelete?.id;
+            setConfirmDeleteOpen(false);
+            setPendingDelete(null);
+            if (id) await handleDelete(id);
+          }}
+          className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-sm font-medium"
+        >
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }
