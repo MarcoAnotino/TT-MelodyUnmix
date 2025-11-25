@@ -1,6 +1,17 @@
 // src/App.js
-import React, { useLayoutEffect, useRef } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import React, {
+  useLayoutEffect,
+  useRef,
+  useEffect,
+  useState,
+} from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import ScrollReveal from "scrollreveal";
 
 // Páginas públicas
@@ -19,13 +30,12 @@ import ResetDone from "./pages/ResetDone";
 import ResetVerify from "./pages/ResetVerify";
 import DeleteAccount from "./pages/DeleteAccount";
 
-
-
 // ---------- Guard de ruta protegida ----------
 function isAuthed() {
   // Revisa sessionStorage primero (puede tener el access refrescado),
   // luego localStorage (persistente).
-  const access = sessionStorage.getItem("access") ?? localStorage.getItem("access");
+  const access =
+    sessionStorage.getItem("access") ?? localStorage.getItem("access");
   return Boolean(access);
 }
 
@@ -34,45 +44,85 @@ function ProtectedRoute({ children }) {
 }
 
 /**
- * AppLayout con ScrollReveal
+ * AppLayout con ScrollReveal + fade global
  */
 function AppLayout({ children }) {
   const { pathname } = useLocation();
   const initedRef = useRef(false);
   const srRef = useRef(null);
 
+  // Para el fade-in global por ruta
+  const [visible, setVisible] = useState(false);
+
+  // ScrollReveal (solo movimiento, sin ocultar contenido)
   useLayoutEffect(() => {
     document.documentElement.classList.add("sr-ready");
 
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
+    // Crear instancia solo una vez
     if (!initedRef.current) {
-      try {
-        srRef.current = ScrollReveal({
-          distance: "16px",
-          duration: 500,
-          easing: "ease-out",
-          reset: false,
-          mobile: true,
-          viewFactor: 0,
-          viewOffset: { top: 80, bottom: 0 },
-        });
+      const sr = ScrollReveal({
+        distance: "24px", // movimiento un poco más notorio
+        duration: 900, // animación más lenta
+        easing: "cubic-bezier(0.22,0.61,0.36,1)",
+        reset: false,
+        mobile: true,
+        viewFactor: 0.05,
+        viewOffset: { top: 80, bottom: 0 },
+      });
 
-        const sr = srRef.current;
-        sr.reveal("header.sticky", { distance: "0px", duration: 300 });
-        sr.reveal("main, section", { origin: "bottom", interval: 80 });
-
-        sr.sync();
-        initedRef.current = true;
-      } catch (e) {
-        console.error("ScrollReveal init error:", e);
-      }
-    } else {
-      srRef.current?.sync();
+      srRef.current = sr;
+      initedRef.current = true;
     }
+
+    const sr = srRef.current;
+    if (!sr) return;
+
+    // Limpiar reveals anteriores para poder reanimar en cada ruta
+    sr.clean("header.sticky");
+    sr.clean("main, section");
+
+    // Header: sin fade raro
+    sr.reveal("header.sticky", {
+      distance: "0px",
+      duration: 400,
+      opacity: 1,
+    });
+
+    // Contenido principal: solo movimiento, SIN dejar opacity en 0
+    sr.reveal("main, section", {
+      origin: "bottom",
+      interval: 120,
+      opacity: 1, // importante: nunca los deja invisibles
+    });
+
+    // Recalcular elementos
+    sr.sync();
+    // Forzar un "scroll" para que procese lo que ya está en pantalla
+    window.requestAnimationFrame(() => {
+      window.dispatchEvent(new Event("scroll"));
+    });
   }, [pathname]);
 
-  return children;
+  // Fade global por ruta (controlado por React, no por ScrollReveal)
+  useEffect(() => {
+    setVisible(false);
+    const id = requestAnimationFrame(() => {
+      setVisible(true);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [pathname]);
+
+  return (
+    <div
+      className={`transition-opacity duration-700 ${
+        visible ? "opacity-100" : "opacity-0"
+      }`}
+    >
+      {children}
+    </div>
+  );
 }
 
 export default function App() {
@@ -90,7 +140,10 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           {/* Petición + confirmación de reseteo */}
           <Route path="/reset-verify" element={<ResetVerify />} />
-          <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
+          <Route
+            path="/reset-password/:uid/:token"
+            element={<ResetPassword />}
+          />
           <Route path="/reset-done" element={<ResetDone />} />
 
           <Route path="/delete-account" element={<DeleteAccount />} />
@@ -105,13 +158,15 @@ export default function App() {
             }
           />
 
-          {/* Detalle/descargas (puede ser pública o protegida, tú decides).
-              Si debe ser privada, envuélvela en <ProtectedRoute> igual que /app */}
+          {/* Detalle/descargas */}
           <Route path="/tracks/:id" element={<UploadedScreen />} />
 
           {/* Compatibilidad nombre anterior */}
           <Route path="/UploadedScreen/:id" element={<UploadedScreen />} />
-          <Route path="/UploadedScreen" element={<Navigate to="/app" replace />} />
+          <Route
+            path="/UploadedScreen"
+            element={<Navigate to="/app" replace />}
+          />
 
           <Route
             path="/profile"
@@ -121,7 +176,6 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-
 
           {/* 404 */}
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,7 +1,6 @@
 // About.jsx
 import React, { useRef } from "react";
 import Header from "../components/Header";
-import demoVideo from "../assets/images/DemoVideoBand.mp4";
 import { useAutoPauseVideo } from "../hooks/useAutoPauseVideo";
 
 import diegoabout1 from "../assets/images/DiegoAbout.jpeg";
@@ -97,40 +96,6 @@ export default function About() {
           ))}
         </div>
       </section>
-
-      {/* Sección de video */}
-      <section className="px-4 sm:px-6 mt-4 sm:mt-2 mb-20 sm:mb-24">
-        <h2 className="text-center text-xl sm:text-3xl font-semibold mb-5 sm:mb-6">
-          Video para ya saben que.
-        </h2>
-
-        <div
-          className="
-            mx-auto w-full max-w-3xl sm:max-w-4xl lg:max-w-5xl
-            rounded-2xl overflow-hidden border border-white/10
-            shadow-[0_20px_60px_rgba(0,0,0,0.45)]
-          "
-          style={{ aspectRatio: "16 / 9" }}
-        >
-          <video
-            ref={videoRef}
-            className="w-full h-full block"
-            src={demoVideo}
-            controls
-            playsInline
-            muted
-            loop
-            preload="metadata"
-          >
-            Tu navegador no soporta video HTML5.
-          </video>
-        </div>
-
-        <p className="mt-3 text-center text-[11px] sm:text-sm text-white/80">
-          Fragmento extraído de un video en internet.
-        </p>
-      </section>
-
       <footer className="h-10" />
     </div>
   );
