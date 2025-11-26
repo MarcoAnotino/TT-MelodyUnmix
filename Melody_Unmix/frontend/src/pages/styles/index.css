@@ -2,34 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+/* === Fuentes Mazzard === */
 @font-face {
   font-family: 'Mazzard-MRegular';
   src: url('./assets/fonts/Mazzard-Font/MazzardM-Regular.otf') format('opentype');
-  font-weight: normal;
+  font-weight: 400;
   font-style: normal;
 }
-
 @font-face {
   font-family: 'Mazzard-MMedium';
   src: url('./assets/fonts/Mazzard-Font/MazzardM-Medium.otf') format('opentype');
   font-weight: 500;
   font-style: normal;
 }
-
 @font-face {
   font-family: 'Mazzard-MSemiBold';
   src: url('./assets/fonts/Mazzard-Font/MazzardM-SemiBold.otf') format('opentype');
   font-weight: 600;
   font-style: normal;
 }
-
 @font-face {
   font-family: 'Mazzard-MLight';
   src: url('./assets/fonts/Mazzard-Font/MazzardM-Light.otf') format('opentype');
   font-weight: 300;
   font-style: normal;
 }
-
 @font-face {
   font-family: 'Mazzard-HMedium';
   src: url('./assets/fonts/Mazzard-Font/MazzardH-Medium.otf') format('opentype');
@@ -37,13 +34,44 @@
   font-style: normal;
 }
 
-/* Estilos globales adicionales */
-body {
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
+/* === Base === */
+@layer base {
+  html, body, #root { @apply h-full; }
+  body { @apply font-sans text-white; }
+  button, input, select, textarea {
+    @apply appearance-none bg-transparent border-0 outline-none;
+  }
 }
 
-* {
-  box-sizing: border-box;
+/* Utilidad exportada desde Figma */
+@layer components { .all-\[unset\] { all: unset; } }
+
+/* === Fondo Home EXACTO (linear + glows) === */
+
+/* Linear del Figma (arriba → medio → abajo) */
+.bg-home-gradient {
+  background: linear-gradient(180deg, #333C4E 3%, #252A34 49%, #151516 95%);
 }
+
+/* Círculos con blur tipo “Layer Blur 700px”:
+   - 700x700 con blur 350px
+   - color #08D9D6
+   - opacidad sutil para no “aplastar” el linear
+   - fixed: no genera cortes al hacer scroll
+*/
+.glow {
+  position: fixed;
+  width: 700px;
+  height: 700px;
+  background: #08D9D6;
+  filter: blur(350px);
+  border-radius: 9999px;
+  opacity: .25;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* posiciones del Figma */
+.glow-top    { top: -220px; left: 50%; transform: translateX(-50%); }
+.glow-left   { top: 32vh;   left: -220px; }
+.glow-right  { top: 46vh;   right: -220px; }

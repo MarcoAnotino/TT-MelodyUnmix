@@ -1,0 +1,8 @@
+{{ subject }}
+
+¡Bienvenido(a), {{ first_name }}!
+Tu cuenta en Melody Unmix se creó correctamente.
+
+Inicia sesión: {{ login_url }}
+
+Si no creaste esta cuenta, ignora este correo.

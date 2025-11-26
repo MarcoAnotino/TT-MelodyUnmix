@@ -1,0 +1,160 @@
+{
+    "nav": {
+      "home": "Home",
+      "about": "Acerca",
+      "signin": "Iniciar sesión",
+      "signup": "Crear cuenta",
+      "logout": "Cerrar sesión",
+      "my_files": "Mis archivos"
+    },
+  
+    "common": {
+      "loading": "Cargando...",
+      "processing": "Procesando…",
+      "processed": "Procesado",
+      "error": "Error",
+      "unknown": "Desconocido",
+      "back": "Regresar",
+      "go_to_files": "Ir a mis archivos",
+      "confirm": "Confirmar",
+      "cancel": "Cancelar"
+    },
+  
+    "home": {
+      "hero_title": "La plataforma definitiva de IA para músicos",
+      "hero_sub": "Melody Unmix es la suite de herramientas de IA para músicos de todos los estilos: separa pistas, practica con tus canciones favoritas y colabora con tu equipo. Creada por y para músicos.",
+      "cta_signin": "Iniciar sesión",
+      "cta_signup": "Crear cuenta",
+      "cta_gofiles": "Ir a mis archivos",
+      "bullets": {
+        "stems_title": "Separa por stems",
+        "stems_desc": "Voz, batería, bajo, otros—en minutos.",
+        "flow_title": "Flujo simple",
+        "flow_desc": "Sube, espera y descarga. Sin complicaciones.",
+        "for_musicians_title": "Pensado para músicos",
+        "for_musicians_desc": "Herramientas hechas por y para creadores."
+      },
+      "api": {
+        "ping_title": "Welcome to the MelodyUnmix API",
+        "status": "Estado",
+        "database": "Base de datos",
+        "mongo": "Mongo"
+      }
+    },
+  
+    "header": {
+      "signin_signup": "Sign In / Sign Up",
+      "hello_user": "Hola, {{username}}",
+      "menu": {
+        "profile": "Mi perfil",
+        "files": "Mis archivos",
+        "logout": "Cerrar sesión"
+      }
+    },
+  
+    "features": {
+      "title": "Con tecnología avanzada de IA, descompón canciones en:",
+      "stems": {
+        "vocals": "Voz",
+        "drums": "Batería",
+        "guitar": "Guitarra",
+        "bass": "Bajo",
+        "other": "Otros"
+      }
+    },
+  
+    "signin": {
+      "title": "Melody Unmix",
+      "subtitle": "Inicia sesión para continuar",
+      "email": "Correo",
+      "password": "Contraseña",
+      "remember": "Recordarme",
+      "forgot": "Olvidé mi contraseña",
+      "submit": "Ingresar",
+      "no_account": "¿No tienes cuenta?",
+      "go_signup": "Regístrate",
+      "invalid_credentials": "Correo o contraseña inválidos."
+    },
+  
+    "signup": {
+      "title": "Crear cuenta",
+      "subtitle": "Únete a Melody Unmix en segundos",
+      "first_name": "Nombre",
+      "last_name_p": "Apellido paterno",
+      "last_name_m": "Apellido materno",
+      "username": "Usuario",
+      "email": "Correo",
+      "password": "Contraseña",
+      "password_confirm": "Confirmar contraseña",
+      "password_hint": "Mínimo 8 caracteres, incluye mayúscula, número y carácter especial.",
+      "submit": "Registrarse",
+      "have_account": "¿Ya tienes cuenta?",
+      "go_signin": "Inicia sesión",
+      "password_mismatch": "Las contraseñas no coinciden"
+    },
+  
+    "forgot": {
+      "title": "¿Olvidaste tu contraseña?",
+      "subtitle": "Te enviaremos un enlace para restablecerla.",
+      "email": "Correo electrónico",
+      "submit": "Enviar enlace",
+      "ok": "Si el correo existe, te enviamos un enlace para restablecer tu contraseña.",
+      "err": "No pudimos enviar el correo. Inténtalo de nuevo en unos minutos.",
+      "back_signin": "Volver a iniciar sesión",
+      "go_signup": "Crear cuenta"
+    },
+  
+    "userscreen": {
+      "title": "Comienza a probar nuestra IA",
+      "subtitle": "Sube tu archivo ahora",
+      "upload": "Subir archivo",
+      "uploading": "Subiendo...",
+      "table": {
+        "title": "Título",
+        "duration": "Duración",
+        "status": "Estatus",
+        "actions": "Acciones"
+      },
+      "empty": "Aún no has subido archivos.",
+      "only_mp3_wav": "Solo se permiten archivos MP3 o WAV.",
+      "delete_confirm": "¿Eliminar este audio definitivamente?",
+      "delete": "Eliminar",
+      "downloaddetail": "Descargar",
+      "go_detail": "Ver descargas",
+      "status": {
+        "uploading": "Subiendo…",
+        "processing": "Procesando…",
+        "processed": "Procesado",
+        "error": "Error al subir"
+      }
+    },
+  
+    "uploaded": {
+      "title_fallback": "Tu canción",
+      "ready": "Tu canción está lista, elige qué quieres descargar.",
+      "pending": "Estamos preparando tus pistas…",
+      "badges": {
+        "ready": "Listo",
+        "processing": "Procesando…",
+        "error": "Error"
+      },
+      "stems": {
+        "vocals": "Voz",
+        "drums": "Batería",
+        "guitar": "Guitarra",
+        "bass": "Bajo",
+        "other": "Otros",
+        "all": "Descargar todo"
+      },
+      "errors": {
+        "unauthorized": "Tu sesión expiró. Inicia sesión de nuevo.",
+        "not_found": "No encontramos este audio o no te pertenece.",
+        "download_failed": "No se pudo descargar este stem. Verifica que está disponible."
+      },
+      "actions": {
+        "back": "Regresar",
+        "to_files": "Ir a mis archivos"
+      }
+    }
+  }
+  

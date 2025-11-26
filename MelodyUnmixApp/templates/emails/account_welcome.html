@@ -1,0 +1,8 @@
+{% extends "emails/base_email.html" %}
+{% block content %}
+<h1>¡Bienvenido(a), {{ first_name }}!</h1>
+<p>Tu cuenta en <strong>Melody Unmix</strong> se creó correctamente.</p>
+<p>Puedes iniciar sesión cuando quieras:</p>
+<p><a class="btn" href="{{ login_url }}">Iniciar sesión</a></p>
+<p class="muted">Si no creaste esta cuenta, ignora este correo.</p>
+{% endblock %}
