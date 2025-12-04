@@ -118,10 +118,11 @@ export default function SignUp() {
         last_name: v.apellidos,
       });
 
-      setOkMsg(
-        "Cuenta creada correctamente. Presiona cerrar para ir a Iniciar sesión."
-      );
-      setOkOpen(true);
+      // Navegar a la página de verificación de email
+      navigate("/email-verify", {
+        replace: true,
+        state: { email: v.correo },
+      });
     } catch (err) {
       const { fieldErrors: fe, general } = parseDRFError(err);
       setFieldErrors(fe);
@@ -151,32 +152,26 @@ export default function SignUp() {
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-signup text-white">
-      {/* Overlay de carga */}
+      {/* Overlay de carga - Mejorado */}
       {submitting && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 backdrop-blur-sm">
-          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-black/70 border border-white/10 text-sm sm:text-base">
-            <svg
-              className="animate-spin h-4 w-4 sm:h-5 sm:w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden
-            >
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-                className="opacity-25"
-              ></circle>
-              <path
-                d="M4 12a8 8 0 0 1 8-8"
-                stroke="currentColor"
-                strokeWidth="4"
-                className="opacity-90"
-              ></path>
-            </svg>
-            <span>Procesando…</span>
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 backdrop-blur-md">
+          <div className="flex flex-col items-center gap-4 px-6 py-6 rounded-2xl bg-gradient-to-br from-black/80 to-black/60 border border-white/20 shadow-2xl backdrop-blur-xl">
+            {/* Spinner animado con gradiente */}
+            <div className="relative w-16 h-16">
+              <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#08D9D6] border-r-[#08D9D6] animate-spin"></div>
+              <div className="absolute inset-2 rounded-full bg-gradient-to-br from-[#08D9D6]/20 to-transparent"></div>
+            </div>
+
+            {/* Texto */}
+            <div className="text-center">
+              <p className="text-lg font-semibold text-white mb-1">
+                Creando tu cuenta...
+              </p>
+              <p className="text-sm text-white/60">
+                Esto tomará solo un momento
+              </p>
+            </div>
           </div>
         </div>
       )}
@@ -219,11 +214,10 @@ export default function SignUp() {
                   autoComplete="given-name"
                   required
                   aria-invalid={!!fieldErrors.first_name}
-                  className={`w-full h-11 sm:h-12 rounded-xl bg-black/55 border px-3 sm:px-4 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-[#A87D06]/70 ${
-                    fieldErrors.first_name
-                      ? "border-rose-400"
-                      : "border-white/10"
-                  }`}
+                  className={`w-full h-11 sm:h-12 rounded-xl bg-black/55 border px-3 sm:px-4 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-[#A87D06]/70 ${fieldErrors.first_name
+                    ? "border-rose-400"
+                    : "border-white/10"
+                    }`}
                 />
                 {fieldErrors.first_name && (
                   <p className="mt-1 text-xs sm:text-sm text-rose-300">
@@ -246,11 +240,10 @@ export default function SignUp() {
                   autoComplete="family-name"
                   required
                   aria-invalid={!!fieldErrors.last_name}
-                  className={`w-full h-11 sm:h-12 rounded-xl bg-black/55 border px-3 sm:px-4 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-[#A87D06]/70 ${
-                    fieldErrors.last_name
-                      ? "border-rose-400"
-                      : "border-white/10"
-                  }`}
+                  className={`w-full h-11 sm:h-12 rounded-xl bg-black/55 border px-3 sm:px-4 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-[#A87D06]/70 ${fieldErrors.last_name
+                    ? "border-rose-400"
+                    : "border-white/10"
+                    }`}
                   placeholder="Ej. Paterno Materno"
                 />
                 {fieldErrors.last_name && (
@@ -277,9 +270,8 @@ export default function SignUp() {
                   autoComplete="username"
                   required
                   aria-invalid={!!fieldErrors.username}
-                  className={`w-full h-11 sm:h-12 rounded-xl bg-black/55 border px-3 sm:px-4 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-[#A87D06]/70 ${
-                    fieldErrors.username ? "border-rose-400" : "border-white/10"
-                  }`}
+                  className={`w-full h-11 sm:h-12 rounded-xl bg-black/55 border px-3 sm:px-4 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-[#A87D06]/70 ${fieldErrors.username ? "border-rose-400" : "border-white/10"
+                    }`}
                 />
                 {fieldErrors.username && (
                   <p className="mt-1 text-xs sm:text-sm text-rose-300">
@@ -303,9 +295,8 @@ export default function SignUp() {
                   autoComplete="email"
                   required
                   aria-invalid={!!fieldErrors.email}
-                  className={`w-full h-11 sm:h-12 rounded-xl bg-black/55 border px-3 sm:px-4 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-[#A87D06]/70 ${
-                    fieldErrors.email ? "border-rose-400" : "border-white/10"
-                  }`}
+                  className={`w-full h-11 sm:h-12 rounded-xl bg-black/55 border px-3 sm:px-4 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-[#A87D06]/70 ${fieldErrors.email ? "border-rose-400" : "border-white/10"
+                    }`}
                   placeholder="tucorreo@dominio.com"
                 />
                 {fieldErrors.email && (
@@ -341,10 +332,9 @@ export default function SignUp() {
                       pr-10 sm:pr-12 pl-3 sm:pl-4
                       text-sm sm:text-base
                       focus:outline-none focus:ring-2 focus:ring-[#A87D06]/70
-                      ${
-                        showPwdErrorBorder
-                          ? "border-rose-400"
-                          : "border-white/10"
+                      ${showPwdErrorBorder
+                        ? "border-rose-400"
+                        : "border-white/10"
                       }
                     `}
                     placeholder="••••••••"
@@ -373,14 +363,12 @@ export default function SignUp() {
                     return (
                       <div
                         key={key}
-                        className={`flex items-center gap-2 ${
-                          ok ? "text-green-300" : "text-white/70"
-                        }`}
+                        className={`flex items-center gap-2 ${ok ? "text-green-300" : "text-white/70"
+                          }`}
                       >
                         <span
-                          className={`inline-block h-3 w-3 rounded-full ${
-                            ok ? "bg-green-300" : "bg-white/30"
-                          }`}
+                          className={`inline-block h-3 w-3 rounded-full ${ok ? "bg-green-300" : "bg-white/30"
+                            }`}
                         ></span>
                         <span>{rule.label}</span>
                       </div>
@@ -417,10 +405,9 @@ export default function SignUp() {
                       pr-10 sm:pr-12 pl-3 sm:pl-4
                       text-sm sm:text-base
                       focus:outline-none focus:ring-2 focus:ring-[#A87D06]/70
-                      ${
-                        showConfirmErrorBorder
-                          ? "border-rose-400"
-                          : "border-white/10"
+                      ${showConfirmErrorBorder
+                        ? "border-rose-400"
+                        : "border-white/10"
                       }
                     `}
                     placeholder="••••••••"

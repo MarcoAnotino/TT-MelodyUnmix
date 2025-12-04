@@ -14,6 +14,10 @@ from .views_password_reset import (
     PasswordResetVerifyView,
     PasswordResetConfirmView,
 )
+from .views_email_verify import (
+    EmailVerificationSendView,
+    EmailVerificationVerifyView,
+)
 from .views import DeleteAccountView
 
 app_name = "users"
@@ -30,6 +34,10 @@ urlpatterns = [
     path("auth/password-reset/", PasswordResetRequestView.as_view(), name="password_reset"),
     path("auth/password-reset/verify/", PasswordResetVerifyView.as_view(), name="password_reset_verify"),
     path("auth/password-reset/confirm/", PasswordResetConfirmView.as_view(), name="password_reset_confirm"),
+
+    # Email Verification
+    path("auth/email-verify/send/", EmailVerificationSendView.as_view(), name="email_verify_send"),
+    path("auth/email-verify/verify/", EmailVerificationVerifyView.as_view(), name="email_verify_verify"),
 
     path("me/", UserDetailView.as_view(), name="me"),
     path("delete-account/", DeleteAccountView.as_view(), name="delete_account"),  

@@ -142,32 +142,26 @@ export default function ResetVerify() {
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-signup text-white">
-      {/* Loading overlay */}
+      {/* Loading overlay - Mejorado */}
       {submitting && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 backdrop-blur-sm">
-          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-black/70 border border-white/10 text-sm sm:text-base">
-            <svg
-              className="animate-spin h-4 w-4 sm:h-5 sm:w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden
-            >
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-                className="opacity-25"
-              ></circle>
-              <path
-                d="M4 12a8 8 0 0 1 8-8"
-                stroke="currentColor"
-                strokeWidth="4"
-                className="opacity-90"
-              ></path>
-            </svg>
-            <span>Validando…</span>
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 backdrop-blur-md">
+          <div className="flex flex-col items-center gap-4 px-6 py-6 rounded-2xl bg-gradient-to-br from-black/80 to-black/60 border border-white/20 shadow-2xl backdrop-blur-xl">
+            {/* Spinner animado con gradiente */}
+            <div className="relative w-16 h-16">
+              <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#08D9D6] border-r-[#08D9D6] animate-spin"></div>
+              <div className="absolute inset-2 rounded-full bg-gradient-to-br from-[#08D9D6]/20 to-transparent"></div>
+            </div>
+
+            {/* Texto */}
+            <div className="text-center">
+              <p className="text-lg font-semibold text-white mb-1">
+                Validando código...
+              </p>
+              <p className="text-sm text-white/60">
+                Esto tomará solo un momento
+              </p>
+            </div>
           </div>
         </div>
       )}
@@ -185,9 +179,8 @@ export default function ResetVerify() {
 
         <form
           onSubmit={onSubmit}
-          className={`mx-auto w-full max-w-2xl bg-black/40 backdrop-blur-md rounded-2xl border border-white/10 p-5 sm:p-8 md:p-10 shadow-[0_10px_25px_rgba(0,0,0,0.35)] ${
-            submitting ? "pointer-events-none opacity-90" : ""
-          }`}
+          className={`mx-auto w-full max-w-2xl bg-black/40 backdrop-blur-md rounded-2xl border border-white/10 p-5 sm:p-8 md:p-10 shadow-[0_10px_25px_rgba(0,0,0,0.35)] ${submitting ? "pointer-events-none opacity-90" : ""
+            }`}
         >
           {/* Correo */}
           <div className="space-y-2">
@@ -207,11 +200,10 @@ export default function ResetVerify() {
                   : (e) => setEmail(e.target.value)
               }
               readOnly={emailLocked}
-              className={`w-full h-11 sm:h-12 rounded-xl px-3 sm:px-4 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-[#A87D06]/70 ${
-                emailLocked
+              className={`w-full h-11 sm:h-12 rounded-xl px-3 sm:px-4 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-[#A87D06]/70 ${emailLocked
                   ? "bg-black/40 border border-white/20 cursor-not-allowed text-white/80"
                   : "bg-black/55 border border-white/10"
-              }`}
+                }`}
             />
             {emailLocked && (
               <p className="mt-1 text-xs text-white/60">
@@ -221,45 +213,45 @@ export default function ResetVerify() {
           </div>
 
           {/* Código */}
-<div className="mt-6">
-  <label className="text-xs sm:text-sm opacity-90">
-    Código (6 bloques)
-  </label>
+          <div className="mt-6">
+            <label className="text-xs sm:text-sm opacity-90">
+              Código (6 bloques)
+            </label>
 
-  {/* Contenedor para controlar el ancho máximo */}
-  <div className="mt-2 max-w-xs sm:max-w-sm md:max-w-md mx-auto">
-    <div className="grid grid-cols-6 gap-1.5 sm:gap-3">
-      {Array.from({ length: BLOCKS }).map((_, i) => (
-        <input
-          key={i}
-          ref={(el) => (inputsRef.current[i] = el)}
-          inputMode="text"
-          pattern="[A-Za-z0-9]*"
-          maxLength={1}
-          value={parts[i]}
-          onChange={(e) => onChangeBlock(i, e.target.value)}
-          onInput={(e) => onInput(i, e)}
-          onKeyDown={(e) => onKeyDown(i, e)}
-          onPaste={(e) => onPasteBlocks(i, e)}
-          className="
+            {/* Contenedor para controlar el ancho máximo */}
+            <div className="mt-2 max-w-xs sm:max-w-sm md:max-w-md mx-auto">
+              <div className="grid grid-cols-6 gap-1.5 sm:gap-3">
+                {Array.from({ length: BLOCKS }).map((_, i) => (
+                  <input
+                    key={i}
+                    ref={(el) => (inputsRef.current[i] = el)}
+                    inputMode="text"
+                    pattern="[A-Za-z0-9]*"
+                    maxLength={1}
+                    value={parts[i]}
+                    onChange={(e) => onChangeBlock(i, e.target.value)}
+                    onInput={(e) => onInput(i, e)}
+                    onKeyDown={(e) => onKeyDown(i, e)}
+                    onPaste={(e) => onPasteBlocks(i, e)}
+                    className="
             h-10 sm:h-11
             text-sm sm:text-lg
             text-center tracking-[0.2em] sm:tracking-[0.3em]
             rounded-xl bg-black/55 border border-white/10
             focus:outline-none focus:ring-2 focus:ring-[#A87D06]/70
           "
-          placeholder="-"
-          aria-label={`Bloque ${i + 1} del código`}
-        />
-      ))}
-    </div>
-  </div>
+                    placeholder="-"
+                    aria-label={`Bloque ${i + 1} del código`}
+                  />
+                ))}
+              </div>
+            </div>
 
-  <p className="mt-2 text-xs sm:text-sm text-white/70 text-center">
-    Puedes pegar el código completo en cualquier bloque; se rellenará
-    automáticamente.
-  </p>
-</div>
+            <p className="mt-2 text-xs sm:text-sm text-white/70 text-center">
+              Puedes pegar el código completo en cualquier bloque; se rellenará
+              automáticamente.
+            </p>
+          </div>
 
 
           <button

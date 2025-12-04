@@ -57,7 +57,14 @@ class RegisterSerializer(serializers.ModelSerializer):
         validated_data.pop("password2", None)
         user = User(**validated_data)
         user.set_password(password)  # Argon2
+        # Crear usuario inactivo hasta que verifique su email
+        user.is_active = False
         user.save()
+        
+        # Enviar código de verificación por email
+        from .utils_email_verify import send_verification_email
+        send_verification_email(user.email, user.first_name)
+        
         return user
 
 class UserSerializer(serializers.ModelSerializer):

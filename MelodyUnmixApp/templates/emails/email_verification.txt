@@ -1,0 +1,14 @@
+Hola {{ first_name }},
+
+Gracias por registrarte en Melody Unmix.
+
+Para activar tu cuenta, usa este código de verificación:
+
+{{ code }}
+
+Este código expira en {{ expiry_minutes }} minutos.
+
+Si no te registraste en Melody Unmix, puedes ignorar este correo.
+
+---
+Melody Unmix

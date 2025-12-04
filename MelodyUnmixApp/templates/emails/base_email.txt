@@ -4,4 +4,4 @@
 
 —
 Melody Unmix
-{{ now|date:"Y-m-d H:i" }} UTC
+{{ now|date:"Y-m-d H:i" }} CST

@@ -28,6 +28,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ResetDone from "./pages/ResetDone";
 import ResetVerify from "./pages/ResetVerify";
+import EmailVerify from "./pages/EmailVerify";
 import DeleteAccount from "./pages/DeleteAccount";
 
 // ---------- Guard de ruta protegida ----------
@@ -62,47 +63,63 @@ function AppLayout({ children }) {
 
     // Crear instancia solo una vez
     if (!initedRef.current) {
-      const sr = ScrollReveal({
-        distance: "24px", // movimiento un poco más notorio
-        duration: 900, // animación más lenta
-        easing: "cubic-bezier(0.22,0.61,0.36,1)",
-        reset: false,
-        mobile: true,
-        viewFactor: 0.05,
-        viewOffset: { top: 80, bottom: 0 },
-      });
+      try {
+        const sr = ScrollReveal({
+          distance: "24px", // movimiento un poco más notorio
+          duration: 900, // animación más lenta
+          easing: "cubic-bezier(0.22,0.61,0.36,1)",
+          reset: false,
+          mobile: true,
+          viewFactor: 0.05,
+          viewOffset: { top: 80, bottom: 0 },
+        });
 
-      srRef.current = sr;
-      initedRef.current = true;
+        srRef.current = sr;
+        initedRef.current = true;
+      } catch (error) {
+        console.warn("ScrollReveal initialization failed:", error);
+        return;
+      }
     }
 
     const sr = srRef.current;
     if (!sr) return;
 
-    // Limpiar reveals anteriores para poder reanimar en cada ruta
-    sr.clean("header.sticky");
-    sr.clean("main, section");
+    try {
+      // Limpiar reveals anteriores para poder reanimar en cada ruta
+      sr.clean("header.sticky");
+      sr.clean("main, section");
 
-    // Header: sin fade raro
-    sr.reveal("header.sticky", {
-      distance: "0px",
-      duration: 400,
-      opacity: 1,
-    });
+      // Header: sin fade raro (solo si existe)
+      const header = document.querySelector("header.sticky");
+      if (header) {
+        sr.reveal("header.sticky", {
+          distance: "0px",
+          duration: 400,
+          opacity: 1,
+        });
+      }
 
-    // Contenido principal: solo movimiento, SIN dejar opacity en 0
-    sr.reveal("main, section", {
-      origin: "bottom",
-      interval: 120,
-      opacity: 1, // importante: nunca los deja invisibles
-    });
+      // Contenido principal: solo movimiento, SIN dejar opacity en 0 (solo si existen)
+      const mainElements = document.querySelectorAll("main, section");
+      if (mainElements.length > 0) {
+        sr.reveal("main, section", {
+          origin: "bottom",
+          interval: 120,
+          opacity: 1, // importante: nunca los deja invisibles
+        });
+      }
 
-    // Recalcular elementos
-    sr.sync();
-    // Forzar un "scroll" para que procese lo que ya está en pantalla
-    window.requestAnimationFrame(() => {
-      window.dispatchEvent(new Event("scroll"));
-    });
+      // Recalcular elementos
+      sr.sync();
+      // Forzar un "scroll" para que procese lo que ya está en pantalla
+      window.requestAnimationFrame(() => {
+        window.dispatchEvent(new Event("scroll"));
+      });
+    } catch (error) {
+      // Safari puede tener problemas con ScrollReveal en ciertos casos
+      console.warn("ScrollReveal reveal failed:", error);
+    }
   }, [pathname]);
 
   // Fade global por ruta (controlado por React, no por ScrollReveal)
@@ -116,9 +133,8 @@ function AppLayout({ children }) {
 
   return (
     <div
-      className={`transition-opacity duration-700 ${
-        visible ? "opacity-100" : "opacity-0"
-      }`}
+      className={`transition-opacity duration-700 ${visible ? "opacity-100" : "opacity-0"
+        }`}
     >
       {children}
     </div>
@@ -138,6 +154,8 @@ export default function App() {
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          {/* Email verification */}
+          <Route path="/email-verify" element={<EmailVerify />} />
           {/* Petición + confirmación de reseteo */}
           <Route path="/reset-verify" element={<ResetVerify />} />
           <Route
