@@ -141,6 +141,19 @@ export async function updateProfile(formData) {
   return data;
 }
 
+// ---------- Endpoints de verificación de email ----------
+// Enviar (o reenviar) código de verificación de email
+export async function sendEmailVerificationCode(email) {
+  const { data } = await api.post("/api/users/auth/email-verify/send/", { email });
+  return data;
+}
+
+// Verificar código de verificación de email
+export async function verifyEmailCode({ email, code }) {
+  const { data } = await api.post("/api/users/auth/email-verify/verify/", { email, code });
+  return data;
+}
+
 // ---------- Endpoints de Reseteo de contraseña ----------
 // Solicitar envío del código (ya lo llamas en ForgotPassword)
 export async function requestPasswordReset(email) {

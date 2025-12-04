@@ -1,0 +1,9 @@
+{% extends "emails/base_email.html" %}
+{% block content %}
+<h1>Verifica tu cuenta</h1>
+<p>Hola {{ first_name }},</p>
+<p>Gracias por registrarte en Melody Unmix. Para activar tu cuenta, usa este código de verificación:</p>
+<p><code style="font-size:18px;letter-spacing:2px;">{{ code }}</code></p>
+<p>Este código expira en {{ expiry_minutes }} minutos.</p>
+<p>Si no te registraste en Melody Unmix, puedes ignorar este correo.</p>
+{% endblock %}

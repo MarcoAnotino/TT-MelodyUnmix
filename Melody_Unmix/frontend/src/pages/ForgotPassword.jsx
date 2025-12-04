@@ -27,27 +27,27 @@ export default function ForgotPassword() {
   const onSubmit = async (e) => {
     e.preventDefault();
     if (!email || sending) return;
-  
+
     setSending(true);
     setErrOpen(false);
     setOkOpen(false);
-  
+
     try {
       const data = await requestPasswordReset(email.trim());
-  
+
       // Normaliza la condición de "éxito real"
       const emailExists =
         data?.found === true ||
         data?.status === "sent" ||
         data?.email_exists === true; // por si en backend lo llamas distinto
-  
+
       if (emailExists) {
         // ✅ Solo aquí navegamos a /reset-verify
         setOkMsg(
           "Te enviamos un código de verificación. Continúa para validarlo."
         );
         setOkOpen(true);
-  
+
         setTimeout(() => {
           navigate("/reset-verify", {
             replace: true,
@@ -79,36 +79,30 @@ export default function ForgotPassword() {
       setSending(false);
     }
   };
-  
+
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-forgot-password text-white">
-      {/* Overlay loading */}
+      {/* Overlay loading - Mejorado */}
       {sending && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 backdrop-blur-sm">
-          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-black/70 border border-white/10 text-sm sm:text-base">
-            <svg
-              className="animate-spin h-4 w-4 sm:h-5 sm:w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden
-            >
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-                className="opacity-25"
-              ></circle>
-              <path
-                d="M4 12a8 8 0 0 1 8-8"
-                stroke="currentColor"
-                strokeWidth="4"
-                className="opacity-90"
-              ></path>
-            </svg>
-            <span>Enviando…</span>
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 backdrop-blur-md">
+          <div className="flex flex-col items-center gap-4 px-6 py-6 rounded-2xl bg-gradient-to-br from-black/80 to-black/60 border border-white/20 shadow-2xl backdrop-blur-xl">
+            {/* Spinner animado con gradiente */}
+            <div className="relative w-16 h-16">
+              <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#08D9D6] border-r-[#08D9D6] animate-spin"></div>
+              <div className="absolute inset-2 rounded-full bg-gradient-to-br from-[#08D9D6]/20 to-transparent"></div>
+            </div>
+
+            {/* Texto */}
+            <div className="text-center">
+              <p className="text-lg font-semibold text-white mb-1">
+                Enviando código...
+              </p>
+              <p className="text-sm text-white/60">
+                Revisa tu bandeja de entrada
+              </p>
+            </div>
           </div>
         </div>
       )}
@@ -135,9 +129,8 @@ export default function ForgotPassword() {
         >
           <form
             onSubmit={onSubmit}
-            className={`space-y-4 sm:space-y-5 ${
-              sending ? "pointer-events-none opacity-90" : ""
-            }`}
+            className={`space-y-4 sm:space-y-5 ${sending ? "pointer-events-none opacity-90" : ""
+              }`}
           >
             <label
               htmlFor="fp-email"
