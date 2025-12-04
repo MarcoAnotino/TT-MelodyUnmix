@@ -6,10 +6,14 @@ Django==5.2.6
 django-cors-headers==4.7.0
 djangorestframework==3.16.1
 djangorestframework_simplejwt==5.5.1
+dnspython==2.8.0
+email-validator==2.3.0
+idna==3.11
+pillow==12.0.0
 psycopg2-binary==2.9.10
 pycparser==2.23
 PyJWT==2.10.1
-pymongo==3.11.4
+pymongo==4.15.5
 python-decouple==3.8
 pytz==2025.2
 sqlparse==0.5.3
