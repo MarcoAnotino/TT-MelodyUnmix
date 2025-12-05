@@ -33,21 +33,30 @@ def ejecutar_demucs(nombre_archivo, usuario=None, output_dir=None):
 
     print(f"🚀 Ejecutando Demucs para: {nombre_archivo}")
 
+    # ⚠️ Aquí forzamos UTF-8 y evitamos que falle por caracteres raros
     proceso = subprocess.Popen(
         comando,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        text=True
+        text=True,
+        encoding="utf-8",   # Fuerza UTF-8
+        errors="replace",   # Cualquier byte raro se reemplaza, no truena
+        bufsize=1,          # Line-buffered (más fluido)
     )
 
     log_path = os.path.join(base_path, "logs", "demucs_logs.txt")
     os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
     write_log(event="Inicio de separación", user=usuario, extra={"archivo": nombre_archivo})
-    with open(log_path, "a") as log:
+
+    # También el archivo de log en UTF-8
+    with open(log_path, "a", encoding="utf-8", errors="replace") as log:
         log.write(f"\n\n===== Procesando {nombre_archivo} =====\n")
 
+        # Leer línea por línea sin rompernos por Unicode
         for linea in iter(proceso.stdout.readline, ''):
+            # Por si viene con \r\n
+            linea = linea.replace("\r", "")
             sys.stdout.write(linea)
             sys.stdout.flush()
 
@@ -56,6 +65,9 @@ def ejecutar_demucs(nombre_archivo, usuario=None, output_dir=None):
 
             write_log(event="Demucs progreso", user=usuario, extra={"line": linea.strip()})
 
+    # Cerramos stdout explícitamente y esperamos a que termine
+    if proceso.stdout is not None:
+        proceso.stdout.close()
     proceso.wait()
 
     if proceso.returncode != 0:
