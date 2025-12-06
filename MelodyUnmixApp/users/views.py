@@ -161,7 +161,7 @@ class DeleteAccountView(APIView):
                     e,
                 )
 
-        # 7) Eliminar usuario (avatar se borra por señal post_delete;
+        # 7) Eliminar usuario (avatar se borra automáticamente por señal post_delete en users/signals.py;
         #    ArchivoAudio / ProcesamientoAudio por on_delete=CASCADE)
         user.delete()
 
