@@ -179,6 +179,30 @@ export default function Header({ variant = "default" }) {
     navigate("/");
   };
 
+  useEffect(() => {
+    const onStorage = (e) => {
+      // Solo nos interesan cambios en access, user o persist
+      if (!["access", "user", "persist"].includes(e.key)) return;
+
+      if (!hasAccessToken()) {
+        // Ya no hay token => considerar usuario deslogueado
+        setUser(null);
+        sessionStorage.removeItem("user");
+        localStorage.removeItem("user");
+        setMenuOpen(false);
+        setMobileNavOpen(false);
+      } else {
+        // Hay token => reintenta leer user del storage
+        const stored = readStoredUser();
+        setUser(stored);
+      }
+    };
+
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+
   const pillBg = variant === "home" ? "bg-black/90" : "bg-black/95";
 
   const closeMobileAndGo = (path) => {

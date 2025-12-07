@@ -92,3 +92,6 @@ Procesamiento_Señales/__pycache__/
 demucs_logs.txt
 
 output_audio/mdx_exta_q/*
+
+# Limpieza de base de datos
+cleandb.py

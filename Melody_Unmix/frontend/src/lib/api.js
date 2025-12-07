@@ -33,9 +33,13 @@ export function setTokens({ access, persist }) {
 
 export function clearTokens() {
   localStorage.removeItem("persist");
-  localStorage.removeItem("access");
-  sessionStorage.removeItem("access");
+  // borra tanto access como user en ambos storages
+  ["access", "user"].forEach((key) => {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  });
 }
+
 
 function readToken(key) {
   // solo leemos 'access'
