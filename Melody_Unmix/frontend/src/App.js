@@ -30,6 +30,8 @@ import ResetDone from "./pages/ResetDone";
 import ResetVerify from "./pages/ResetVerify";
 import EmailVerify from "./pages/EmailVerify";
 import DeleteAccount from "./pages/DeleteAccount";
+import Terms from "./pages/Terms.jsx";
+
 
 // ---------- Guard de ruta protegida ----------
 function isAuthed() {
@@ -59,7 +61,8 @@ function AppLayout({ children }) {
   useLayoutEffect(() => {
     document.documentElement.classList.add("sr-ready");
 
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || isSafari) return;
 
     // Crear instancia solo una vez
     if (!initedRef.current) {
@@ -194,6 +197,9 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Términos y condiciones */}
+          <Route path="/terms" element={<Terms />} />
 
           {/* 404 */}
           <Route path="*" element={<Navigate to="/" replace />} />

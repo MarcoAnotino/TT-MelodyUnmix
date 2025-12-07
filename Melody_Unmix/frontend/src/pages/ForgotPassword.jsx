@@ -55,7 +55,7 @@ export default function ForgotPassword() {
           });
         }, 700);
       } else {
-        // ❌ El backend NO confirmó que exista → no navegamos
+        // El backend NO confirmó que exista → no navegamos
         const msg =
           data?.detail ||
           "Ese correo no se encuentra registrado.";

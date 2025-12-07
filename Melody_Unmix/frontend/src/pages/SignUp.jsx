@@ -33,6 +33,10 @@ export default function SignUp() {
   });
   const [submitting, setSubmitting] = useState(false);
 
+  // Terminos y condiciones
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+
+
   // Errores
   const [errOpen, setErrOpen] = useState(false);
   const [errMsg, setErrMsg] = useState("");
@@ -91,6 +95,11 @@ export default function SignUp() {
     if (!emailRegex.test(correo)) return fail("Ingresa un correo válido.");
     if (!isPwdValid) return fail("La contraseña no cumple con los requisitos.");
     if (pass !== pass2) return fail("Las contraseñas no coinciden.");
+    if (!acceptedTerms) {
+      return fail(
+        "Debes aceptar los Términos de uso y Aviso de privacidad para crear tu cuenta."
+      );
+    }
 
     return { nombres, apellidos, username, correo, pass, pass2 };
   };
@@ -447,9 +456,66 @@ export default function SignUp() {
               </div>
             </div>
 
+            {/* Aceptación de Términos y Aviso de Privacidad */}
+            <div className="flex items-start gap-3 text-xs sm:text-sm text-white/80">
+              {/* Checkbox custom mejorado */}
+              <button
+                type="button"
+                onClick={() => setAcceptedTerms((prev) => !prev)}
+                className={`
+                  mt-0.5 h-5 w-5 flex-shrink-0 flex items-center justify-center
+                  rounded-md border-2 transition-all duration-200
+                  ${acceptedTerms
+                    ? "bg-[#08D9D6] border-[#08D9D6]"
+                    : "bg-black/40 border-white/30 hover:border-white/50"}
+                `}
+                aria-pressed={acceptedTerms}
+                aria-label="Aceptar Términos de uso y Aviso de privacidad"
+              >
+                {acceptedTerms && (
+                  <svg
+                    className="w-3.5 h-3.5 text-[#0e0e0e]"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={3}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                )}
+              </button>
+
+              {/* Texto clickeable */}
+              <span
+                className="leading-relaxed cursor-pointer select-none"
+                onClick={() => setAcceptedTerms((prev) => !prev)}
+              >
+                Declaro que soy responsable del contenido de audio que subo y que
+                <span className="font-semibold"> cuento con los derechos necesarios</span>{" "}
+                para utilizarlo en Melody Unmix. Acepto los{" "}
+                <Link
+                  to="/terms"
+                  className="text-[#08D9D6] hover:underline underline-offset-4 font-medium"
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Términos de uso y Aviso de privacidad
+                </Link>
+                .
+              </span>
+            </div>
+
+
+
+
             <button
               type="submit"
-              disabled={submitting || !isPwdValid || !passwordsMatch}
+              disabled={submitting || !isPwdValid || !passwordsMatch || !acceptedTerms}
               className="
                 w-full sm:w-56 h-11 sm:h-12 rounded-xl
                 bg-[#08D9D6] text-[#0e0e0e] font-semibold
@@ -459,6 +525,7 @@ export default function SignUp() {
             >
               {submitting ? "Creando cuenta..." : "Registrarse"}
             </button>
+
 
             <p className="text-center text-xs sm:text-sm text-white/80">
               ¿Ya tienes cuenta?{" "}

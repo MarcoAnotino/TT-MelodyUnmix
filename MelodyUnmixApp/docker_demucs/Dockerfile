@@ -11,11 +11,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # -------------------------------------------------------
-# 2️⃣ Instalación de dependencias de Python
+# 2️⃣ Instalación de dependencias de Python (versiones fijas)
 # -------------------------------------------------------
 RUN pip install --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir torch torchvision torchaudio && \
-    pip install --no-cache-dir demucs audioread soundfile diffq
+    pip install --no-cache-dir \
+    torch==2.7.1 \
+    torchvision==0.22.1 \
+    torchaudio==2.7.1 \
+    --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir demucs==4.0.1 audioread soundfile diffq
+
 
 # -------------------------------------------------------
 # 3️⃣ Limpieza de compiladores (reduce el tamaño final)

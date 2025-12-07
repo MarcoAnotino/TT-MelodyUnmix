@@ -18,13 +18,13 @@ class EmailLoginSerializer(serializers.Serializer):
         try:
             user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:
-            raise serializers.ValidationError({"email": "No existe un usuario con ese correo."})
+            raise serializers.ValidationError({"email": "Correo o contraseña inválidos."})
 
         if not user.is_active:
-            raise serializers.ValidationError({"email": "La cuenta está desactivada."})
+            raise serializers.ValidationError({"email": "Correo o contraseña inválidos."})
 
         if not user.check_password(password):
-            raise serializers.ValidationError({"password": "Contraseña incorrecta."})
+            raise serializers.ValidationError({"password": "Correo o contraseña inválidos."})
 
         attrs["user"] = user
         return attrs
@@ -39,10 +39,12 @@ class EmailTokenObtainPairView(APIView):
         user = serializer.validated_data["user"]
 
         refresh = RefreshToken.for_user(user)
-        return Response(
+        
+        # Respuesta JSON con SOLO el access token y datos de usuario
+        response = Response(
             {
                 "access": str(refresh.access_token),
-                "refresh": str(refresh),
+                # "refresh": str(refresh),  <-- Ya no lo enviamos en el body
                 "user": {
                     "id": user.id,
                     "username": user.username,
@@ -52,3 +54,16 @@ class EmailTokenObtainPairView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+        # Seteamos el refresh token en cookie HTTP-Only
+        from django.conf import settings
+        response.set_cookie(
+            key='refresh_token',
+            value=str(refresh),
+            httponly=True,
+            secure=not settings.DEBUG,  # True en prod
+            samesite='Lax',             # Ajustar si es cross-site
+            max_age=7 * 24 * 60 * 60    # 7 días
+        )
+
+        return response

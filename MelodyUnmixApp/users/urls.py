@@ -9,6 +9,7 @@ from rest_framework_simplejwt.views import (
 
 from .views import RegisterView, UserDetailView, UserListView
 from .auth_email import EmailTokenObtainPairView
+from .authentication_views import CookieTokenRefreshView, CookieLogoutView  # <--- Importamos las nuevas views
 from .views_password_reset import (
     PasswordResetRequestView,
     PasswordResetVerifyView,
@@ -24,10 +25,10 @@ app_name = "users"
 
 urlpatterns = [
     path("auth/register/", RegisterView.as_view(), name="register"),
-    path("auth/login/", TokenObtainPairView.as_view(), name="login"),
-    path("auth/login-email/", EmailTokenObtainPairView.as_view(), name="login_email"),
-    path("auth/logout/", TokenBlacklistView.as_view(), name="logout"),
-    path("auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("auth/login/", TokenObtainPairView.as_view(), name="login"), # Login clasico (devuelve JSON)
+    path("auth/login-email/", EmailTokenObtainPairView.as_view(), name="login_email"), # Login modificado con Cookie
+    path("auth/logout/", CookieLogoutView.as_view(), name="logout"), # Logout con borrado de cookie
+    path("auth/refresh/", CookieTokenRefreshView.as_view(), name="token_refresh"), # Refresh desde cookie
     path("auth/verify/", TokenVerifyView.as_view(), name="token_verify"),
 
     # Password Reset

@@ -3,49 +3,56 @@ import axios from "axios";
 
 const API_BASE = process.env.REACT_APP_API_BASE_URL || "http://127.0.0.1:8000";
 
-// Cliente con interceptores
-export const api = axios.create({ baseURL: API_BASE });
+// Cliente con interceptores y credenciales (cookies)
+export const api = axios.create({
+  baseURL: API_BASE,
+  withCredentials: true
+});
 
 // Cliente "base" sin interceptores (para refresh, evita loops)
-const base = axios.create({ baseURL: API_BASE });
+const base = axios.create({
+  baseURL: API_BASE,
+  withCredentials: true
+});
 
 // ---------- Helpers de storage (Recordarme on/off) ----------
 const getStore = () =>
   localStorage.getItem("persist") === "1" ? localStorage : sessionStorage;
 
-export function setTokens({ access, refresh, persist }) {
-  // Limpia ambos lugares para evitar residuos
+export function setTokens({ access, persist }) {
+  // Solo guardamos access. El refresh va en cookie invisible.
   localStorage.removeItem("access");
-  localStorage.removeItem("refresh");
   sessionStorage.removeItem("access");
-  sessionStorage.removeItem("refresh");
 
   // Flag para elegir storage persistente o de sesión
   localStorage.setItem("persist", persist ? "1" : "0");
 
   const store = persist ? localStorage : sessionStorage;
   store.setItem("access", access);
-  store.setItem("refresh", refresh);
 }
 
 export function clearTokens() {
   localStorage.removeItem("persist");
   localStorage.removeItem("access");
-  localStorage.removeItem("refresh");
   sessionStorage.removeItem("access");
-  sessionStorage.removeItem("refresh");
 }
 
 function readToken(key) {
-  // Primero sessionStorage (puede tener el último access refrescado),
-  // luego localStorage como respaldo
+  // solo leemos 'access'
   return sessionStorage.getItem(key) ?? localStorage.getItem(key);
 }
 
 // ---------- Logout global: limpia y avisa a la app ----------
-export function logout() {
-  clearTokens();
-  window.dispatchEvent(new Event("app:logout"));
+export async function logout() {
+  try {
+    // Llamar al backend para borrar cookie
+    await base.post("/api/users/auth/logout/");
+  } catch (e) {
+    console.error("Logout error", e);
+  } finally {
+    clearTokens();
+    window.dispatchEvent(new Event("app:logout"));
+  }
 }
 
 // ---------- Interceptor: pega access en cada request ----------
@@ -69,6 +76,7 @@ api.interceptors.response.use(
     const isAuthEndpoint =
       original?.url?.includes("/auth/login") ||
       original?.url?.includes("/auth/login-email") ||
+      original?.url?.includes("/auth/logout") || // Importante
       original?.url?.includes("/auth/refresh");
 
     if (status === 401 && !original._retry && !isAuthEndpoint) {
@@ -76,10 +84,9 @@ api.interceptors.response.use(
 
       if (!refreshing) {
         refreshing = (async () => {
-          const refresh = readToken("refresh");
-          if (!refresh) throw new Error("No refresh token");
-          // Usa el cliente base SIN interceptores
-          const r = await base.post("/api/users/auth/refresh/", { refresh });
+          // Ya no necesitamos leer "refresh" del storage, va en cookie
+          // Usa el cliente base SIN interceptores, y con credenciales
+          const r = await base.post("/api/users/auth/refresh/");
           const store = getStore();
           store.setItem("access", r.data.access);
           return r.data.access;
@@ -118,7 +125,8 @@ export async function loginEmail({ email, password, remember }) {
     email,
     password,
   });
-  setTokens({ access: data.access, refresh: data.refresh, persist: remember });
+  // Data solo trae "access" y "user", el refresh está en cookie.
+  setTokens({ access: data.access, persist: remember });
   return data;
 }
 
