@@ -4,6 +4,7 @@ from rest_framework import status, permissions
 from .services import guardar_audio, agregar_pista, obtener_audio
 from .models import ProcesamientoAudio, ArchivoAudio, PistaSeparada
 from .demucs_service import ejecutar_demucs
+from .metadata_utils import extraer_metadatos
 from django.http import JsonResponse, FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from .services import get_collection
@@ -67,6 +68,10 @@ class MyUploadsView(APIView):
                 "tamano_mb": float(ai.tamano_mb) if ai.tamano_mb is not None else None,
                 "fecha_procesamiento": ai.fecha_procesamiento,
                 "pistas_count": a.pistas.count(),
+                # Metadatos
+                "title": ai.title,
+                "artist": ai.artist,
+                "album": ai.album,
             })
         return Response({"results": results})
 
@@ -78,7 +83,7 @@ class AudioUploadView(APIView):
 
     def post(self, request):
         try:
-            # 1️⃣ Obtener archivo y metadatos
+            # Obtener archivo y metadatos
             archivo_subido = request.FILES.get("archivo")
             if not archivo_subido:
                 return Response({"error": "No se envió ningún archivo de audio."}, status=400)
@@ -90,13 +95,16 @@ class AudioUploadView(APIView):
             input_dir = os.path.join(base_path, "input_audio")
             os.makedirs(input_dir, exist_ok=True)
 
-            # 2️⃣ Guardar físicamente el archivo en input_audio/
+            # Guardar físicamente el archivo en input_audio/
             ruta_guardada = os.path.join(input_dir, nombre_audio)
             with open(ruta_guardada, "wb+") as destino:
                 for chunk in archivo_subido.chunks():
                     destino.write(chunk)
 
-            # 3️⃣ Guardar en Mongo y Postgres (inicialmente en estado "procesando")
+            # Extraer metadatos del archivo
+            metadata = extraer_metadatos(ruta_guardada)
+
+            # Guardar en Mongo y Postgres (inicialmente en estado "procesando")
             audio_id_mongo = guardar_audio(
                 usuario_id=request.user.id,
                 nombre_archivo=nombre_audio,
@@ -112,6 +120,9 @@ class AudioUploadView(APIView):
                 tamano_mb=request.data.get("tamano_mb", 0),
                 duracion=request.data.get("duracion"),
                 ruta_almacenamiento_in=ruta_guardada,
+                title=metadata.get("title"),
+                artist=metadata.get("artist"),
+                album=metadata.get("album"),
             )
 
             archivo_pg = ArchivoAudio.objects.create(
@@ -119,7 +130,7 @@ class AudioUploadView(APIView):
                 usuario=request.user
             )
 
-            # 4️⃣ Lanzar procesamiento en background (Demucs + creación de pistas)
+            # Lanzar procesamiento en background (Demucs + creación de pistas)
             lanzar_procesamiento_asincrono(
                 audio_pg_id=audio_pg.id,
                 archivo_pg_id=archivo_pg.id,
@@ -130,9 +141,9 @@ class AudioUploadView(APIView):
                 audio_id_mongo=audio_id_mongo,
             )
 
-            # 5️⃣ Responder rápido al frontend
+            # Responder rápido al frontend
             return Response({
-                "mensaje": "✅ Archivo recibido. Procesamiento iniciado en segundo plano.",
+                "mensaje": "Archivo recibido. Procesamiento iniciado en segundo plano.",
                 "audio_id_mongo": audio_id_mongo,
                 "audio_id_postgres": audio_pg.id,
                 "archivo_id_postgres": archivo_pg.id,
@@ -150,7 +161,7 @@ class AgregarPistaView(APIView):
     def post(self, request, audio_id):
         data = request.data
 
-        # 1️⃣ Guardar en Mongo
+        # Guardar en Mongo
         updated = agregar_pista(
             audio_id=data.get("audio_id_mongo"),  # aquí pasamos el id de Mongo
             instrumento=data.get("instrumento"),
@@ -159,7 +170,7 @@ class AgregarPistaView(APIView):
             tamano_mb=data.get("tamano_mb"),
         )
 
-        # 2️⃣ Guardar en Postgres
+        # Guardar en Postgres
         try:
             archivo = ArchivoAudio.objects.get(audio_in__id=audio_id, usuario=request.user)
         except ArchivoAudio.DoesNotExist:
@@ -254,6 +265,9 @@ class AudioStatusView(APIView):
             "duracion": audio.duracion,
             "fecha_procesamiento": audio.fecha_procesamiento,
             "pistas_count": archivo.pistas.count(),
+            # Metadatos
+            "artist": audio.artist,
+            "album": audio.album,
         }, status=200)
 
 
@@ -475,18 +489,23 @@ def procesar_audio_en_background(
         )
         os.makedirs(output_root, exist_ok=True)
 
-        # 1️⃣ Ejecutar Demucs
+        # CHECK FUNCTION: Si el registro en DB ya no existe, cancelamos.
+        def is_cancelled():
+            return not ProcesamientoAudio.objects.filter(id=audio_pg_id).exists()
+
+        # Ejecutar Demucs
         ruta_output = ejecutar_demucs(
             nombre_archivo=nombre_audio,
             usuario=username,
             output_dir=output_root,
+            check_cancelled=is_cancelled
         )
 
-        # 2️⃣ Cargar objetos desde DB
+        # Cargar objetos desde DB
         audio_pg = ProcesamientoAudio.objects.get(id=audio_pg_id)
         archivo_pg = ArchivoAudio.objects.get(id=archivo_pg_id)
 
-        # 3️⃣ Registrar pistas separadas con tamaño real en MB
+        # Registrar pistas separadas con tamaño real en MB
         stems = ["drums", "bass", "vocals", "other"]
         total_mb = 0.0
 
@@ -516,12 +535,12 @@ def procesar_audio_en_background(
                         tamano_mb=tamano_mb,
                     )
 
-        # 4️⃣ Actualizar estado final y tamaño total en Postgres
+        # Actualizar estado final y tamaño total en Postgres
         audio_pg.estado = "procesado"
         audio_pg.tamano_mb = total_mb
         audio_pg.save()
 
-        # 5️⃣ Actualizar estado en Mongo (opcional pero recomendable)
+        # Actualizar estado en Mongo (opcional pero recomendable)
         if audio_id_mongo:
             col = get_collection()
             col.update_one(
@@ -530,7 +549,16 @@ def procesar_audio_en_background(
             )
 
     except Exception as e:
-        print("❌ Error en procesamiento asíncrono:", e)
+        if str(e) == "CANCELLED_BY_USER":
+            print(f"⚠️ Proceso cancelado intencionalmente para audio {audio_pg_id}")
+            # Limpiar basura si quedó algo
+            try:
+                safe_rmtree(output_root)
+            except: 
+                pass
+            return # Salimos limpiamente
+
+        print(" Error en procesamiento asíncrono:", e)
         print(traceback.format_exc())
         try:
             audio_pg = ProcesamientoAudio.objects.get(id=audio_pg_id)

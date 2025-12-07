@@ -106,11 +106,14 @@ export default function UserScreen() {
             String(x.estado || "").toLowerCase() === "procesado"
               ? "Procesado"
               : String(x.estado || "").toLowerCase() === "error"
-              ? "Error"
-              : "Procesando…",
+                ? "Error"
+                : "Procesando…",
           tamano_mb: x.tamano_mb,
           pistas_count: x.pistas_count ?? 0,
           fecha_procesamiento: x.fecha_procesamiento,
+          // Metadatos
+          artista: x.artist || "Desconocido",
+          album: x.album || "Desconocido",
         }));
         setRows(rowsLoaded);
         rowsLoaded
@@ -141,7 +144,22 @@ export default function UserScreen() {
     };
   }, []);
 
-  const handleUploadClick = () => fileInputRef.current?.click();
+  // Verifica si hay alguna canción en proceso
+  const hasProcessingAudio = () => {
+    return rows.some(
+      (r) =>
+        r.estatus === "Procesando…" ||
+        r.estatus === "Subiendo…" ||
+        r.estatus === "Error al subir"
+    );
+  };
+
+  const handleUploadClick = () => {
+    if (hasProcessingAudio() || uploading) {
+      return;
+    }
+    fileInputRef.current?.click();
+  };
 
   // Polling inteligente con pausa y backoff
   const startPolling = (audioId) => {
@@ -165,31 +183,34 @@ export default function UserScreen() {
           raw === "procesado" || raw === "processed"
             ? "Procesado"
             : raw === "error"
-            ? "Error"
-            : "Procesando…";
+              ? "Error"
+              : "Procesando…";
 
         setRows((prev) =>
           prev.map((r) =>
             r.id === audioId
               ? {
-                  ...r,
-                  estatus: label,
-                  tamano_mb:
-                    data.tamano_mb !== undefined && data.tamano_mb !== null
-                      ? data.tamano_mb
-                      : r.tamano_mb,
-                  duracion:
-                    data.duracion !== undefined && data.duracion !== null
-                      ? data.duracion
-                      : r.duracion,
-                  fecha_procesamiento:
-                    data.fecha_procesamiento ?? r.fecha_procesamiento,
-                  pistas_count:
-                    data.pistas_count !== undefined &&
+                ...r,
+                estatus: label,
+                tamano_mb:
+                  data.tamano_mb !== undefined && data.tamano_mb !== null
+                    ? data.tamano_mb
+                    : r.tamano_mb,
+                duracion:
+                  data.duracion !== undefined && data.duracion !== null
+                    ? data.duracion
+                    : r.duracion,
+                fecha_procesamiento:
+                  data.fecha_procesamiento ?? r.fecha_procesamiento,
+                pistas_count:
+                  data.pistas_count !== undefined &&
                     data.pistas_count !== null
-                      ? data.pistas_count
-                      : r.pistas_count,
-                }
+                    ? data.pistas_count
+                    : r.pistas_count,
+                // Metadatos
+                artista: data.artist || r.artista || "Desconocido",
+                album: data.album || r.album || "Desconocido",
+              }
               : r
           )
         );
@@ -225,6 +246,15 @@ export default function UserScreen() {
   const handleFiles = async (fileList) => {
     const file = fileList?.[0];
     if (!file) return;
+
+    // Verificar si ya hay una canción en proceso
+    if (hasProcessingAudio() || uploading) {
+      setUploadErrorMsg(
+        "Ya tienes una canción en proceso. Por favor espera a que termine antes de subir otra."
+      );
+      setUploadErrorOpen(true);
+      return;
+    }
 
     const validation = validateAudioFile(file);
     if (!validation.ok) {
@@ -270,10 +300,10 @@ export default function UserScreen() {
         prev.map((r) =>
           r.id === tempKey
             ? {
-                ...r,
-                id: audioId ?? tempKey,
-                estatus: audioId ? "Procesando…" : "Procesado",
-              }
+              ...r,
+              id: audioId ?? tempKey,
+              estatus: audioId ? "Procesando…" : "Procesado",
+            }
             : r
         )
       );
@@ -302,11 +332,17 @@ export default function UserScreen() {
 
   // Drag & Drop handlers
   const handleDragOver = (e) => {
+    if (hasProcessingAudio() || uploading) {
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
   };
 
   const handleDragEnter = (e) => {
+    if (hasProcessingAudio() || uploading) {
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
@@ -323,6 +359,9 @@ export default function UserScreen() {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
+    if (hasProcessingAudio() || uploading) {
+      return;
+    }
     const files = e.dataTransfer?.files;
     if (!files || files.length === 0) return;
     await handleFiles(files);
@@ -330,13 +369,13 @@ export default function UserScreen() {
 
   async function handleDelete(audioId) {
     if (!audioId) return;
-  
+
     setDeletingIds((prev) => new Set(prev).add(audioId));
-  
+
     if (timersRef.current[audioId]) {
       timersRef.current[audioId].stop?.();
     }
-  
+
     try {
       await api.delete(`/api/audios/${audioId}/`);
       setRows((prev) => prev.filter((r) => r.id !== audioId));
@@ -351,12 +390,17 @@ export default function UserScreen() {
     }
   }
 
-  function requestDelete(audioId, title) {
+  function requestDelete(audioId, title, isCancel = false) {
     if (!audioId) return;
-    setPendingDelete({ id: audioId, title });
+    setPendingDelete({
+      id: audioId,
+      title,
+      mode: isCancel ? "cancel" : "delete",
+    });
     setConfirmDeleteOpen(true);
   }
-  
+
+
 
   function handleGoToDownload(audioId, title) {
     if (!audioId) return;
@@ -366,6 +410,8 @@ export default function UserScreen() {
   const totalPistas = rows.reduce((acc, r) => acc + (r.pistas_count || 0), 0);
 
   const ultimoProcesado = rows[0]?.fecha_procesamiento;
+
+  const isProcessing = hasProcessingAudio() || uploading;
 
   return (
     <div className="min-h-screen w-full bg-[linear-gradient(180deg,rgba(51,60,78,1)_3%,rgba(37,42,52,1)_49%,rgba(21,21,22,1)_95%)] text-white">
@@ -383,9 +429,11 @@ export default function UserScreen() {
         <div
           className={[
             "mt-8 w-full max-w-xl rounded-3xl border-2 border-dashed px-4 py-6 sm:px-6 sm:py-8 flex flex-col items-center justify-center text-center transition-all",
-            isDragging
-              ? "border-[#08D9D6] bg-white/10"
-              : "border-white/20 bg-black/20 hover:bg-black/30",
+            isProcessing
+              ? "border-white/10 bg-black/10 opacity-60 cursor-not-allowed"
+              : isDragging
+                ? "border-[#08D9D6] bg-white/10"
+                : "border-white/20 bg-black/20 hover:bg-black/30",
           ].join(" ")}
           onDragOver={handleDragOver}
           onDragEnter={handleDragEnter}
@@ -394,16 +442,22 @@ export default function UserScreen() {
         >
           <button
             onClick={handleUploadClick}
-            disabled={uploading}
-            className="w-full sm:w-[205px] h-[46px] sm:h-[49px] flex items-center justify-center bg-[#3e4070] rounded-[18px] sm:rounded-[20px] hover:bg-[#4a4d8a] transition-colors disabled:opacity-60"
+            disabled={isProcessing}
+            className="w-full sm:w-[205px] h-[46px] sm:h-[49px] flex items-center justify-center bg-[#3e4070] rounded-[18px] sm:rounded-[20px] hover:bg-[#4a4d8a] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <span className="text-base sm:text-xl">
-              {uploading ? "Subiendo..." : "Subir archivo"}
+              {uploading
+                ? "Subiendo..."
+                : isProcessing
+                  ? "Procesando..."
+                  : "Subir archivo"}
             </span>
           </button>
 
           <p className="mt-4 text-xs sm:text-sm text-white/70">
-            o arrastra y suelta aquí un archivo de audio (.mp3, .wav)
+            {isProcessing
+              ? "Espera a que termine el procesamiento actual"
+              : "o arrastra y suelta aquí un archivo de audio (.mp3, .wav)"}
           </p>
         </div>
 
@@ -420,6 +474,7 @@ export default function UserScreen() {
           accept=".mp3,.wav,audio/*"
           className="hidden"
           onChange={handleFileChange}
+          disabled={isProcessing}
         />
         <AlertCard
           open={uploadErrorOpen}
@@ -462,10 +517,11 @@ export default function UserScreen() {
 
           {/* Encabezado lista (solo desktop) */}
           <div
-            className="hidden sm:grid grid-cols-[minmax(0,3fr)_minmax(0,1.2fr)_minmax(0,1.4fr)_auto] text-[#e3dddd] text-xs sm:text-sm uppercase tracking-wide px-4 py-2"
+            className="hidden sm:grid grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_auto] text-[#e3dddd] text-xs sm:text-sm uppercase tracking-wide px-4 py-2"
             role="row"
           >
             <div>Canción</div>
+            <div>Artista / Álbum</div>
             <div>Duración / Tamaño</div>
             <div>Procesado</div>
             <div className="text-right">Acciones</div>
@@ -482,7 +538,7 @@ export default function UserScreen() {
               rows.map((row) => (
                 <div
                   key={row.id ?? `${row.titulo}-${row.estatus}`}
-                  className="flex flex-col sm:grid sm:grid-cols-[minmax(0,3fr)_minmax(0,1.2fr)_minmax(0,1.4fr)_auto] gap-3 sm:gap-4 items-stretch sm:items-center px-4 py-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/[0.07] transition-colors"
+                  className="flex flex-col sm:grid sm:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_auto] gap-3 sm:gap-4 items-stretch sm:items-center px-4 py-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/[0.07] transition-colors"
                   role="row"
                 >
                   {/* Título + fecha */}
@@ -492,6 +548,14 @@ export default function UserScreen() {
                     </p>
                     <p className="text-[11px] sm:text-xs text-white/50 mt-1">
                       Procesado: {formatDateTime(row.fecha_procesamiento)}
+                    </p>
+                  </div>
+
+                  {/* Artista / Álbum */}
+                  <div className="w-full text-sm text-white/80">
+                    <p className="font-medium">{row.artista}</p>
+                    <p className="text-[11px] sm:text-xs text-white/50">
+                      {row.album}
                     </p>
                   </div>
 
@@ -511,8 +575,8 @@ export default function UserScreen() {
                         (row.estatus === "Procesado"
                           ? "bg-emerald-500/20 text-emerald-300"
                           : row.estatus === "Error"
-                          ? "bg-rose-500/20 text-rose-300"
-                          : "bg-yellow-500/20 text-yellow-300")
+                            ? "bg-rose-500/20 text-rose-300"
+                            : "bg-yellow-500/20 text-yellow-300")
                       }
                     >
                       {row.estatus}
@@ -524,26 +588,32 @@ export default function UserScreen() {
 
                   {/* Acciones */}
                   <div className="w-full flex flex-col sm:flex-row sm:justify-end gap-2">
+                    {/* Ver pistas solo cuando ya está procesado */}
                     {row.estatus === "Procesado" && (
-                      <>
-                        <button
-                          onClick={() => handleGoToDownload(row.id, row.titulo)}
-                          className="inline-flex items-center justify-center px-3 py-2 rounded-xl bg-emerald-500/20 text-emerald-200 text-xs sm:text-sm hover:bg-emerald-500/30 w-full sm:w-auto"
-                        >
-                          Ver pistas
-                        </button>
-
-                        <button
-  onClick={() => requestDelete(row.id, row.titulo)}
-  disabled={!row.id || deletingIds.has(row.id)}
-  className="inline-flex items-center justify-center px-3 py-2 rounded-xl bg-rose-600/20 text-rose-200 text-xs sm:text-sm hover:bg-rose-600/30 disabled:opacity-50 w-full sm:w-auto"
->
-  Eliminar
-</button>
-
-                      </>
+                      <button
+                        onClick={() => handleGoToDownload(row.id, row.titulo)}
+                        className="inline-flex items-center justify-center px-3 py-2 rounded-xl bg-emerald-500/20 text-emerald-200 text-xs sm:text-sm hover:bg-emerald-500/30 w-full sm:w-auto"
+                      >
+                        Ver pistas
+                      </button>
                     )}
+
+                    {/* Eliminar / Cancelar disponible SIEMPRE que haya id */}
+                    <button
+                      onClick={() =>
+                        requestDelete(
+                          row.id,
+                          row.titulo,
+                          row.estatus === "Procesando…" // <- si está procesando, es cancelar
+                        )
+                      }
+                      disabled={!row.id || deletingIds.has(row.id)}
+                      className="inline-flex items-center justify-center px-3 py-2 rounded-xl bg-rose-600/20 text-rose-200 text-xs sm:text-sm hover:bg-rose-600/30 disabled:opacity-50 w-full sm:w-auto"
+                    >
+                      {row.estatus === "Procesando…" ? "Cancelar" : "Eliminar"}
+                    </button>
                   </div>
+
                 </div>
               ))
             )}
@@ -551,42 +621,62 @@ export default function UserScreen() {
         </div>
       </section>
       {confirmDeleteOpen && (
-  <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4">
-    <div className="w-full max-w-sm rounded-2xl bg-[#181924] border border-white/10 p-5 shadow-2xl">
-      <h2 className="text-lg font-semibold mb-2">¿Eliminar archivo?</h2>
-      <p className="text-sm text-white/70 mb-4">
-        ¿Seguro que quieres eliminar{" "}
-        <span className="font-medium text-white">
-          “{pendingDelete?.title || "esta canción"}”
-        </span>
-        ? Esta acción no se puede deshacer.
-      </p>
-      <div className="flex justify-end gap-2">
-        <button
-          onClick={() => {
-            setConfirmDeleteOpen(false);
-            setPendingDelete(null);
-          }}
-          className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-sm"
-        >
-          Cancelar
-        </button>
-        <button
-          onClick={async () => {
-            const id = pendingDelete?.id;
-            setConfirmDeleteOpen(false);
-            setPendingDelete(null);
-            if (id) await handleDelete(id);
-          }}
-          className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-sm font-medium"
-        >
-          Eliminar
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4">
+          <div className="w-full max-w-sm rounded-2xl bg-[#181924] border border-white/10 p-5 shadow-2xl">
+            {(() => {
+              const isCancel = pendingDelete?.mode === "cancel";
+              const title = pendingDelete?.title || "esta canción";
 
+              return (
+                <>
+                  <h2 className="text-lg font-semibold mb-2">
+                    {isCancel ? "¿Cancelar procesamiento?" : "¿Eliminar archivo?"}
+                  </h2>
+                  <p className="text-sm text-white/70 mb-4">
+                    {isCancel ? (
+                      <>
+                        ¿Seguro que quieres cancelar el procesamiento de{" "}
+                        <span className="font-medium text-white">“{title}”</span>? El
+                        archivo se eliminará de tu historial y podrás volver a subirlo
+                        cuando quieras.
+                      </>
+                    ) : (
+                      <>
+                        ¿Seguro que quieres eliminar{" "}
+                        <span className="font-medium text-white">“{title}”</span>? Esta
+                        acción no se puede deshacer.
+                      </>
+                    )}
+                  </p>
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => {
+                        setConfirmDeleteOpen(false);
+                        setPendingDelete(null);
+                      }}
+                      className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-sm"
+                    >
+                      Volver
+                    </button>
+                    <button
+                      onClick={async () => {
+                        const id = pendingDelete?.id;
+                        setConfirmDeleteOpen(false);
+                        setPendingDelete(null);
+                        if (id) await handleDelete(id); // misma lógica para ambos
+                      }}
+                      className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-sm font-medium"
+                    >
+                      {pendingDelete?.mode === "cancel" ? "Sí, cancelar" : "Eliminar"}
+                    </button>
+
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
