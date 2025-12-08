@@ -4,6 +4,7 @@ import os
 import sys
 from logs.services import write_log 
 
+
 def ejecutar_demucs(nombre_archivo, usuario=None, output_dir=None, check_cancelled=None):
     """
     Llama al contenedor Docker de Demucs y muestra progreso en tiempo real.
@@ -13,7 +14,7 @@ def ejecutar_demucs(nombre_archivo, usuario=None, output_dir=None, check_cancell
     - output_dir: puede ser único por usuario/audio para no pisar resultados.
     - check_cancelled: función que devuelve True si el proceso debe abortarse.
     """
-    # Subir dos niveles: services/ -> audios/ -> MelodyUnmixApp/
+    # Subir dos niveles: audios/ -> MelodyUnmixApp/
     base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     input_dir = os.path.join(base_path, "input_audio")
 
@@ -29,8 +30,10 @@ def ejecutar_demucs(nombre_archivo, usuario=None, output_dir=None, check_cancell
         "-v", f"{input_dir}:/input",
         "-v", f"{output_dir}:/output",
         "-v", "demucs_cache:/cache",
+        # OJO: pon aquí el nombre correcto de la imagen que construiste
+        # por ejemplo "docker_demucs" si ese fue el tag que usaste
         "demucs:optimized",
-        nombre_archivo
+        nombre_archivo,
     ]
 
     print(f"Ejecutando Demucs para: {nombre_archivo}")
@@ -51,48 +54,53 @@ def ejecutar_demucs(nombre_archivo, usuario=None, output_dir=None, check_cancell
 
     write_log(event="Inicio de separación", user=usuario, extra={"archivo": nombre_archivo})
 
-    # También el archivo de log en UTF-8
-    with open(log_path, "a", encoding="utf-8", errors="replace") as log:
-        log.write(f"\n\n===== Procesando {nombre_archivo} =====\n")
     try:
-        with open(log_path, "a") as log:
+        # Archivo de log en UTF-8
+        with open(log_path, "a", encoding="utf-8", errors="replace") as log:
             log.write(f"\n\n===== Procesando {nombre_archivo} =====\n")
 
-        # Leer línea por línea sin rompernos por Unicode
-        for linea in iter(proceso.stdout.readline, ''):
-            # Por si viene con \r\n
-            linea = linea.replace("\r", "")
-            sys.stdout.write(linea)
-            sys.stdout.flush()
+            # Leer línea por línea sin rompernos por Unicode
             for linea in iter(proceso.stdout.readline, ''):
                 # CHEQUEO DE CANCELACIÓN
                 if check_cancelled and check_cancelled():
-                    print(f" Cancelando proceso demucs para {nombre_archivo}...")
+                    print(f"Cancelando proceso demucs para {nombre_archivo}...")
                     proceso.terminate()
-                    # Esperar un poco a que muera gracefullmente o kill
                     try:
                         proceso.wait(timeout=5)
                     except subprocess.TimeoutExpired:
                         proceso.kill()
-                    
-                    write_log(event="Separación cancelada", user=usuario, extra={"archivo": nombre_archivo})
+
+                    write_log(
+                        event="Separación cancelada",
+                        user=usuario,
+                        extra={"archivo": nombre_archivo},
+                    )
                     raise Exception("CANCELLED_BY_USER")
 
+                # Normalizar saltos de línea
+                linea = linea.replace("\r", "")
+
+                # Mostrar en consola
                 sys.stdout.write(linea)
                 sys.stdout.flush()
 
+                # Guardar en log
                 log.write(linea)
                 log.flush()
 
-            write_log(event="Demucs progreso", user=usuario, extra={"line": linea.strip()})
+                # Registrar progreso en Mongo
+                write_log(
+                    event="Demucs progreso",
+                    user=usuario,
+                    extra={"line": linea.strip()},
+                )
 
-    # Cerramos stdout explícitamente y esperamos a que termine
-    if proceso.stdout is not None:
-        proceso.stdout.close()
-    proceso.wait()
-                write_log(event="Demucs progreso", user=usuario, extra={"line": linea.strip()})
-        
+        # Cerramos stdout explícitamente y esperamos a que termine
+        if proceso.stdout is not None:
+            proceso.stdout.close()
+
         proceso.wait()
+
     except Exception as e:
         # Asegurar que si explota algo (o cancelamos), el proceso muera
         if proceso.poll() is None:
@@ -100,11 +108,19 @@ def ejecutar_demucs(nombre_archivo, usuario=None, output_dir=None, check_cancell
         raise e
 
     if proceso.returncode != 0:
-        write_log(event="Error en separación", user=usuario, extra={"archivo": nombre_archivo})
+        write_log(
+            event="Error en separación",
+            user=usuario,
+            extra={"archivo": nombre_archivo},
+        )
         raise Exception("Error al ejecutar Demucs (ver logs arriba o en Mongo)")
 
     print("Demucs completado.")
-    write_log(event="Separación completada", user=usuario, extra={"archivo": nombre_archivo})
+    write_log(
+        event="Separación completada",
+        user=usuario,
+        extra={"archivo": nombre_archivo},
+    )
 
     # Demucs crea /output/mdx_extra_q/<nombre_sin_ext>/
     return os.path.join(output_dir, "mdx_extra_q", os.path.splitext(nombre_archivo)[0])
