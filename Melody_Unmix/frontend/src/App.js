@@ -11,6 +11,7 @@ import {
   Route,
   Navigate,
   useLocation,
+  useNavigate,
 } from "react-router-dom";
 import ScrollReveal from "scrollreveal";
 
@@ -30,6 +31,8 @@ import ResetDone from "./pages/ResetDone";
 import ResetVerify from "./pages/ResetVerify";
 import EmailVerify from "./pages/EmailVerify";
 import DeleteAccount from "./pages/DeleteAccount";
+import Terms from "./pages/Terms.jsx";
+
 
 // ---------- Guard de ruta protegida ----------
 function isAuthed() {
@@ -59,7 +62,8 @@ function AppLayout({ children }) {
   useLayoutEffect(() => {
     document.documentElement.classList.add("sr-ready");
 
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || isSafari) return;
 
     // Crear instancia solo una vez
     if (!initedRef.current) {
@@ -141,9 +145,29 @@ function AppLayout({ children }) {
   );
 }
 
+/**
+ * Componente que escucha el evento app:logout y redirige a Home
+ * cuando la sesión expira (ej: servidor reiniciado, token inválido)
+ */
+function LogoutRedirector() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleLogout = () => {
+      navigate("/", { replace: true });
+    };
+
+    window.addEventListener("app:logout", handleLogout);
+    return () => window.removeEventListener("app:logout", handleLogout);
+  }, [navigate]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <Router>
+      <LogoutRedirector />
       <AppLayout>
         <Routes>
           {/* Públicas */}
@@ -194,6 +218,9 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Términos y condiciones */}
+          <Route path="/terms" element={<Terms />} />
 
           {/* 404 */}
           <Route path="*" element={<Navigate to="/" replace />} />

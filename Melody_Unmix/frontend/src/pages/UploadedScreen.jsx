@@ -19,10 +19,10 @@ function stripExtension(name = "") {
 
 const STEMS = [
   { key: "vocals", label: "Voz", img: image1 },
-  { key: "drums",  label: "Batería", img: image2 },
+  { key: "drums", label: "Batería", img: image2 },
   { key: "guitar", label: "Guitarra", img: image3 },
-  { key: "bass",   label: "Bajo", img: image4 },
-  { key: "other",  label: "Otros", img: image7 },
+  { key: "bass", label: "Bajo", img: image4 },
+  { key: "other", label: "Otros", img: image7 },
 ];
 
 const normalizeStatus = (raw) => {
@@ -131,9 +131,9 @@ export default function UploadedScreen() {
   // Descarga usando api (incluye Authorization)
   const handleDownload = async (stemKey) => {
     if (!id || !isReady || loading) return;
-  
+
     setLoading(true);
-  
+
     try {
       const res = await api.get(`/api/audios/${id}/download/${stemKey}`, {
         responseType: "blob",
@@ -141,12 +141,12 @@ export default function UploadedScreen() {
         validateStatus: (status) =>
           (status >= 200 && status < 300) || status === 404,
       });
-  
+
       if (res.status === 404) {
         alert("No hay pistas disponibles para este audio.");
         return;
       }
-  
+
       const dispo = res.headers["content-disposition"] || "";
       let filename;
       const m = dispo.match(/filename\*=UTF-8''([^;]+)|filename="?([^"]+)"?/i);
@@ -158,7 +158,7 @@ export default function UploadedScreen() {
         const ext = isZip ? "zip" : "wav";
         filename = `${(title || "audio").replace(/\s+/g, "_")}-${stemKey}.${ext}`;
       }
-  
+
       const blobUrl = URL.createObjectURL(new Blob([res.data]));
       const a = document.createElement("a");
       a.href = blobUrl;
@@ -181,7 +181,7 @@ export default function UploadedScreen() {
       setTimeout(() => setLoading(false), 400);
     }
   };
-  
+
 
 
   return (

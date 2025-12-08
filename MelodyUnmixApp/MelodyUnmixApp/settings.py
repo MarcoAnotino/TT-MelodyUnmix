@@ -104,6 +104,7 @@ MIDDLEWARE = [
 # CORS / CSRF
 # =========================
 CORS_ALLOW_ALL_ORIGINS = config("CORS_ALLOW_ALL_ORIGINS", default=True, cast=bool)
+CORS_ALLOW_CREDENTIALS = True # Permite cookies cross-origin
 
 # Si necesitas lista en vez de ALL:
 # CORS_ALLOWED_ORIGINS = [

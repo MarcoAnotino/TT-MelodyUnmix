@@ -20,10 +20,6 @@ function extractErrorMessage(err) {
   }
 
   // Error en el campo password (contraseña incorrecta)
-  if (data.password) {
-    const msg = Array.isArray(data.password) ? data.password[0] : data.password;
-    return msg || "Contraseña incorrecta.";
-  }
 
   // Mensaje genérico tipo {"detail": "..."}
   if (typeof data.detail === "string") {

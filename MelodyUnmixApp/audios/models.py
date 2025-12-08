@@ -18,6 +18,11 @@ class ProcesamientoAudio(models.Model):
     duracion = models.IntegerField(blank=True, null=True)
     ruta_almacenamiento_in = models.CharField(max_length=255, blank=True, null=True)
     fecha_procesamiento = models.DateTimeField(auto_now_add=True)
+    
+    # Metadatos extraídos del archivo de audio
+    title = models.CharField(max_length=500, blank=True, null=True)
+    artist = models.CharField(max_length=500, blank=True, null=True)
+    album = models.CharField(max_length=500, blank=True, null=True)
 
     def __str__(self):
         return self.nombre_audio

@@ -10,9 +10,8 @@ function NavLink({ to, children, onClick }) {
     <Link
       to={to}
       onClick={onClick}
-      className={`block whitespace-nowrap text-sm sm:text-base transition-opacity ${
-        isActive ? "opacity-100" : "opacity-80 hover:opacity-100"
-      }`}
+      className={`block whitespace-nowrap text-sm sm:text-base transition-opacity ${isActive ? "opacity-100" : "opacity-80 hover:opacity-100"
+        }`}
     >
       {children}
     </Link>
@@ -49,7 +48,7 @@ export default function Header({ variant = "default" }) {
     }
     return readStoredUser();
   });
-  
+
   const [menuOpen, setMenuOpen] = useState(false); // menú del avatar
   const [mobileNavOpen, setMobileNavOpen] = useState(false); // menú hamburguesa
   const menuRef = useRef(null);
@@ -152,15 +151,57 @@ export default function Header({ variant = "default" }) {
     return () => window.removeEventListener("user:updated", handler);
   }, []);
 
-  const onLogout = () => {
-    logout();
+  // 🔹 Listener para LOGOUT (para limpiar estado inmediatamente)
+  useEffect(() => {
+    const onLogoutEvent = () => {
+      setUser(null);
+
+      // Asegurar limpieza visual de menús
+      setMenuOpen(false);
+      setMobileNavOpen(false);
+
+      // Limpieza extra por si acaso
+      sessionStorage.removeItem("user");
+      localStorage.removeItem("user");
+    };
+
+    window.addEventListener("app:logout", onLogoutEvent);
+    return () => window.removeEventListener("app:logout", onLogoutEvent);
+  }, []);
+
+  const onLogout = async () => {
+    await logout();
+    // La función logout() ya dispara "app:logout", 
+    // pero por redundancia limpiamos aquí también para UX instantánea.
     setUser(null);
     setMenuOpen(false);
     setMobileNavOpen(false);
-    sessionStorage.removeItem("user");
-    localStorage.removeItem("user");
     navigate("/");
   };
+
+  useEffect(() => {
+    const onStorage = (e) => {
+      // Solo nos interesan cambios en access, user o persist
+      if (!["access", "user", "persist"].includes(e.key)) return;
+
+      if (!hasAccessToken()) {
+        // Ya no hay token => considerar usuario deslogueado
+        setUser(null);
+        sessionStorage.removeItem("user");
+        localStorage.removeItem("user");
+        setMenuOpen(false);
+        setMobileNavOpen(false);
+      } else {
+        // Hay token => reintenta leer user del storage
+        const stored = readStoredUser();
+        setUser(stored);
+      }
+    };
+
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
 
   const pillBg = variant === "home" ? "bg-black/90" : "bg-black/95";
 

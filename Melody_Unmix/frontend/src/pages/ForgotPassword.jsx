@@ -42,7 +42,7 @@ export default function ForgotPassword() {
         data?.email_exists === true; // por si en backend lo llamas distinto
 
       if (emailExists) {
-        // ✅ Solo aquí navegamos a /reset-verify
+        // Solo aquí navegamos a /reset-verify
         setOkMsg(
           "Te enviamos un código de verificación. Continúa para validarlo."
         );
@@ -55,7 +55,7 @@ export default function ForgotPassword() {
           });
         }, 700);
       } else {
-        // ❌ El backend NO confirmó que exista → no navegamos
+        // El backend NO confirmó que exista → no navegamos
         const msg =
           data?.detail ||
           "Ese correo no se encuentra registrado.";

@@ -24,7 +24,7 @@ from .permissions import IsAdminUserCustom, IsOwnerOrAdmin
 from .email_utils import send_templated_email
 
 from logs.models import AccountDeletionLog
-from audios.services import get_collection
+from audios.mongo_services import get_collection
 from audios.models import PistaSeparada
 
 
@@ -161,7 +161,7 @@ class DeleteAccountView(APIView):
                     e,
                 )
 
-        # 7) Eliminar usuario (avatar se borra por señal post_delete;
+        # 7) Eliminar usuario (avatar se borra automáticamente por señal post_delete en users/signals.py;
         #    ArchivoAudio / ProcesamientoAudio por on_delete=CASCADE)
         user.delete()
 
