@@ -1,13 +1,12 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
-from .services import guardar_audio, agregar_pista, obtener_audio
+from .mongo_services import guardar_audio, agregar_pista, obtener_audio
 from .models import ProcesamientoAudio, ArchivoAudio, PistaSeparada
-from .demucs_service import ejecutar_demucs
 from .metadata_utils import extraer_metadatos
 from django.http import JsonResponse, FileResponse, Http404
 from django.shortcuts import get_object_or_404
-from .services import get_collection
+from .mongo_services import get_collection
 from django.db import close_old_connections
 from bson import ObjectId 
 from pymongo.errors import PyMongoError
@@ -471,8 +470,8 @@ def procesar_audio_en_background(
     - Actualiza Mongo (si audio_id_mongo no es None)
     """
     from .models import ProcesamientoAudio, ArchivoAudio, PistaSeparada
-    from .demucs_service import ejecutar_demucs
-    from .services import agregar_pista, get_collection
+    from .services.pipeline import procesar_cancion
+    from .mongo_services import agregar_pista, get_collection
     from .views import safe_rm  # ya lo tienes más abajo en este mismo archivo
 
     close_old_connections()
@@ -493,11 +492,11 @@ def procesar_audio_en_background(
         def is_cancelled():
             return not ProcesamientoAudio.objects.filter(id=audio_pg_id).exists()
 
-        # Ejecutar Demucs
-        ruta_output = ejecutar_demucs(
+        # Ejecutar pipeline completo (Demucs + GuitarNet)
+        stems = procesar_cancion(
             nombre_archivo=nombre_audio,
-            usuario=username,
             output_dir=output_root,
+            usuario=username,
             check_cancelled=is_cancelled
         )
 
@@ -506,19 +505,20 @@ def procesar_audio_en_background(
         archivo_pg = ArchivoAudio.objects.get(id=archivo_pg_id)
 
         # Registrar pistas separadas con tamaño real en MB
-        stems = ["drums", "bass", "vocals", "other"]
         total_mb = 0.0
 
-        for stem in stems:
-            ruta_pista = os.path.join(ruta_output, f"{stem}.wav")
-            if os.path.exists(ruta_pista):
+        for stem_name, ruta_pista in stems.items():
+            if ruta_pista and os.path.exists(ruta_pista):
                 tamano_bytes = os.path.getsize(ruta_pista)
                 tamano_mb = round(tamano_bytes / (1024 * 1024), 2)
                 total_mb += tamano_mb
 
+                # Normalizar nombre del instrumento (other -> others para consistencia)
+                instrumento = stem_name if stem_name != "others" else "other"
+
                 pista_pg = PistaSeparada.objects.create(
-                    nombre_pista=f"{nombre_audio}_{stem}",
-                    instrumento=stem,
+                    nombre_pista=f"{nombre_audio}_{stem_name}",
+                    instrumento=instrumento,
                     ruta_pista_out=ruta_pista,
                     duracion=audio_pg.duracion,
                     tamano_mb=tamano_mb,
@@ -529,7 +529,7 @@ def procesar_audio_en_background(
                 if audio_id_mongo:
                     agregar_pista(
                         audio_id=audio_id_mongo,
-                        instrumento=stem,
+                        instrumento=instrumento,
                         url_archivo=ruta_pista,
                         formato="wav",
                         tamano_mb=tamano_mb,

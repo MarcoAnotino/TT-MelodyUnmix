@@ -13,7 +13,8 @@ def ejecutar_demucs(nombre_archivo, usuario=None, output_dir=None, check_cancell
     - output_dir: puede ser único por usuario/audio para no pisar resultados.
     - check_cancelled: función que devuelve True si el proceso debe abortarse.
     """
-    base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    # Subir dos niveles: services/ -> audios/ -> MelodyUnmixApp/
+    base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     input_dir = os.path.join(base_path, "input_audio")
 
     # Si no se pasa output_dir, usamos el clásico /output_audio
@@ -50,9 +51,9 @@ def ejecutar_demucs(nombre_archivo, usuario=None, output_dir=None, check_cancell
             log.write(f"\n\n===== Procesando {nombre_archivo} =====\n")
 
             for linea in iter(proceso.stdout.readline, ''):
-                # 🛑 CHEQUEO DE CANCELACIÓN
+                # CHEQUEO DE CANCELACIÓN
                 if check_cancelled and check_cancelled():
-                    print(f"🛑 Cancelando proceso demucs para {nombre_archivo}...")
+                    print(f" Cancelando proceso demucs para {nombre_archivo}...")
                     proceso.terminate()
                     # Esperar un poco a que muera gracefullmente o kill
                     try:

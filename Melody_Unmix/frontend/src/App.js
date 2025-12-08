@@ -11,6 +11,7 @@ import {
   Route,
   Navigate,
   useLocation,
+  useNavigate,
 } from "react-router-dom";
 import ScrollReveal from "scrollreveal";
 
@@ -144,9 +145,29 @@ function AppLayout({ children }) {
   );
 }
 
+/**
+ * Componente que escucha el evento app:logout y redirige a Home
+ * cuando la sesión expira (ej: servidor reiniciado, token inválido)
+ */
+function LogoutRedirector() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleLogout = () => {
+      navigate("/", { replace: true });
+    };
+
+    window.addEventListener("app:logout", handleLogout);
+    return () => window.removeEventListener("app:logout", handleLogout);
+  }, [navigate]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <Router>
+      <LogoutRedirector />
       <AppLayout>
         <Routes>
           {/* Públicas */}

@@ -169,8 +169,8 @@ export default function Header({ variant = "default" }) {
     return () => window.removeEventListener("app:logout", onLogoutEvent);
   }, []);
 
-  const onLogout = () => {
-    logout();
+  const onLogout = async () => {
+    await logout();
     // La función logout() ya dispara "app:logout", 
     // pero por redundancia limpiamos aquí también para UX instantánea.
     setUser(null);

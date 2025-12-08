@@ -24,7 +24,7 @@ from .permissions import IsAdminUserCustom, IsOwnerOrAdmin
 from .email_utils import send_templated_email
 
 from logs.models import AccountDeletionLog
-from audios.services import get_collection
+from audios.mongo_services import get_collection
 from audios.models import PistaSeparada
 
 

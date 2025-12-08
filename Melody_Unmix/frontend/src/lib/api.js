@@ -100,11 +100,12 @@ api.interceptors.response.use(
             waiters = [];
             return access;
           })
-          .catch((e) => {
-            waiters.forEach((w) => w.reject(e));
+          .catch(() => {
+            // Sesión expirada: resolver waiters con null para que no exploten
+            waiters.forEach((w) => w.resolve(null));
             waiters = [];
-            logout(); // emite evento y limpia
-            throw e;
+            logout(); // emite evento app:logout y limpia tokens
+            return null; // Indica sesión expirada
           })
           .finally(() => {
             refreshing = null;
@@ -112,9 +113,16 @@ api.interceptors.response.use(
       }
 
       // Espera a que el refresh termine
-      const token = await new Promise((resolve, reject) =>
-        waiters.push({ resolve, reject })
+      const token = await new Promise((resolve) =>
+        waiters.push({ resolve, reject: () => resolve(null) })
       );
+
+      // Si token es null, la sesión expiró y logout ya se disparó
+      if (!token) {
+        // Retornamos respuesta vacía silenciosa para no romper la UI
+        return { data: null, __sessionExpired: true };
+      }
+
       original.headers.Authorization = `Bearer ${token}`;
       return api(original);
     }
