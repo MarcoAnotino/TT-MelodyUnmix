@@ -198,6 +198,57 @@ class GuitarSeparator:
         self.hop_length = 512
         self.win_length = 2048
         self.target_sr = 44100
+
+    def enhance_guitar_mask(self, mask,
+                            gamma=0.8,
+                            high_start_ratio=0.4,
+                            high_boost_db=3.0):
+        """
+        Ajusta la máscara para favorecer ligeramente la guitarra,
+        especialmente en frecuencias agudas.
+
+        Args:
+            mask: [F, T] en [0, 1]
+            gamma: <1 -> empuja valores hacia 1 (más agresivo)
+            high_start_ratio: a partir de qué fracción de F empezar a subir (0-1)
+            high_boost_db: cuántos dB extra para las altas
+
+        Returns:
+            mask_enhanced: [F, T] en [0, 1]
+        """
+        mask = mask.clamp(0, 1)
+
+        # 1) Gamma correction: sharpen suave
+        #    gamma < 1 hace más "blancas" las zonas ya altas de la máscara
+        mask = mask ** gamma
+
+        F, T = mask.shape
+        device = mask.device
+
+        # 2) Peso por frecuencia, subiendo en las altas
+        freqs = torch.linspace(0, 1, F, device=device)  # 0 abajo, 1 arriba
+        start = high_start_ratio
+        weight = torch.ones_like(freqs)
+
+        # zona donde queremos empezar a aumentar
+        idx = freqs >= start
+        if idx.any():
+            boost_lin = 10 ** (high_boost_db / 20)  # pasar dB a factor lineal
+            # sube linealmente de 1 a boost_lin entre start y 1
+            weight[idx] = 1 + (boost_lin - 1) * (freqs[idx] - start) / (1 - start)
+
+        # expandir al eje temporal
+        weight = weight.view(F, 1)
+        mask = mask * weight
+
+        # 3) Re-normalizar a [0, 1] para no romper la mixture consistency
+        m_min = mask.min()
+        m_max = mask.max()
+        if (m_max - m_min) > 1e-8:
+            mask = (mask - m_min) / (m_max - m_min)
+
+        return mask
+
         
     def load_audio(self, audio_path):
         """
@@ -359,6 +410,13 @@ class GuitarSeparator:
             _, guitar_mask = self.process_chunk(magnitude_mono.squeeze(0))
         
         # Calcular máscara de others como complemento (como en entrenamiento)
+        # mejorar máscara para favorecer guitarra, sobre todo en agudos
+        guitar_mask = self.enhance_guitar_mask(
+            guitar_mask,
+            gamma=0.8,            # más bajo = más agresivo
+            high_start_ratio=0.4, # a partir del 40% superior de F
+            high_boost_db=5     # prueba 3–6 dB
+        )
         # Training code: mask_others = 1 - mask_guitar
         others_mask = (1 - guitar_mask).clamp(min=0)
         

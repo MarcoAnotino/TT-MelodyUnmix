@@ -5,6 +5,7 @@ import Header from "../components/Header";
 import { api, me } from "../lib/api";
 import { validateAudioFile } from "../utils/fileValidation";
 import AlertCard from "../components/AlertCard";
+import { useTheme } from "../context/ThemeContext";
 
 /** Formatea segundos a M:SS */
 function formatSecondsToMSS(sec) {
@@ -70,6 +71,7 @@ function getAudioDuration(file) {
 export default function UserScreen() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const { themeValues, isLight } = useTheme();
 
   const timersRef = useRef({});
   const [rows, setRows] = useState([]);
@@ -400,8 +402,6 @@ export default function UserScreen() {
     setConfirmDeleteOpen(true);
   }
 
-
-
   function handleGoToDownload(audioId, title) {
     if (!audioId) return;
     navigate(`/tracks/${audioId}`, { state: { title } });
@@ -413,16 +413,46 @@ export default function UserScreen() {
 
   const isProcessing = hasProcessingAudio() || uploading;
 
+  // Estilos para el dropzone según estado y tema
+  const getDropZoneStyle = () => {
+    let bg = themeValues.cardBg;
+    let border = themeValues.border;
+
+    if (isProcessing) {
+      bg = isLight ? "rgba(0,0,0,0.02)" : "rgba(0,0,0,0.35)";
+    } else if (isDragging) {
+      bg = isLight ? "rgba(8,217,214,0.06)" : "rgba(255,255,255,0.06)";
+      border = "#08D9D6";
+    }
+
+    return {
+      backgroundColor: bg,
+      borderColor: border,
+    };
+  };
+
   return (
-    <div className="min-h-screen w-full bg-[linear-gradient(180deg,rgba(51,60,78,1)_3%,rgba(37,42,52,1)_49%,rgba(21,21,22,1)_95%)] text-white">
+    <div
+      className="min-h-screen w-full transition-colors duration-300"
+      style={{
+        background: themeValues.background,
+        color: themeValues.textPrimary,
+      }}
+    >
       <Header />
 
       {/* Hero de subida con drag & drop */}
       <section className="w-full flex flex-col items-center mt-20 sm:mt-24 px-4">
-        <h1 className="font-semibold text-[clamp(24px,5vw,32px)] text-center">
+        <h1
+          className="font-semibold text-[clamp(24px,5vw,32px)] text-center"
+          style={{ color: themeValues.textPrimary }}
+        >
           Comienza a probar nuestra IA
         </h1>
-        <p className="text-[#e7e7e7] text-[clamp(16px,4.5vw,22px)] mt-1 text-center">
+        <p
+          className="text-[clamp(16px,4.5vw,22px)] mt-1 text-center"
+          style={{ color: themeValues.textSecondary }}
+        >
           Sube tu archivo ahora
         </p>
 
@@ -430,20 +460,27 @@ export default function UserScreen() {
           className={[
             "mt-8 w-full max-w-xl rounded-3xl border-2 border-dashed px-4 py-6 sm:px-6 sm:py-8 flex flex-col items-center justify-center text-center transition-all",
             isProcessing
-              ? "border-white/10 bg-black/10 opacity-60 cursor-not-allowed"
+              ? "opacity-60 cursor-not-allowed"
               : isDragging
-                ? "border-[#08D9D6] bg-white/10"
-                : "border-white/20 bg-black/20 hover:bg-black/30",
+                ? ""
+                : "hover:shadow-lg",
           ].join(" ")}
           onDragOver={handleDragOver}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
+          style={{
+            ...getDropZoneStyle(),
+          }}
         >
           <button
             onClick={handleUploadClick}
             disabled={isProcessing}
-            className="w-full sm:w-[205px] h-[46px] sm:h-[49px] flex items-center justify-center bg-[#3e4070] rounded-[18px] sm:rounded-[20px] hover:bg-[#4a4d8a] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full sm:w-[205px] h-[46px] sm:h-[49px] flex items-center justify-center rounded-[18px] sm:rounded-[20px] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            style={{
+              backgroundColor: "#3e4070",
+              color: "#ffffff",
+            }}
           >
             <span className="text-base sm:text-xl">
               {uploading
@@ -454,7 +491,10 @@ export default function UserScreen() {
             </span>
           </button>
 
-          <p className="mt-4 text-xs sm:text-sm text-white/70">
+          <p
+            className="mt-4 text-xs sm:text-sm"
+            style={{ color: themeValues.textSecondary }}
+          >
             {isProcessing
               ? "Espera a que termine el procesamiento actual"
               : "o arrastra y suelta aquí un archivo de audio (.mp3, .wav)"}
@@ -462,7 +502,10 @@ export default function UserScreen() {
         </div>
 
         {/* Mensaje de retención/eliminación automática */}
-        <p className="mt-3 text-[11px] sm:text-xs text-white/60 max-w-xl text-center leading-relaxed">
+        <p
+          className="mt-3 text-[11px] sm:text-xs max-w-xl text-center leading-relaxed"
+          style={{ color: themeValues.textSecondary }}
+        >
           Por seguridad, los archivos originales y las pistas generadas se
           eliminan automáticamente de nuestros servidores entre 24 y 72 horas
           después del procesamiento.
@@ -489,24 +532,51 @@ export default function UserScreen() {
         <div className="w-full max-w-[1117px] space-y-6">
           {/* Resumen */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
-              <p className="text-xs sm:text-sm text-white/60">
+            <div
+              className="rounded-2xl p-4 border"
+              style={{
+                backgroundColor: themeValues.cardBg,
+                borderColor: themeValues.border,
+              }}
+            >
+              <p
+                className="text-xs sm:text-sm"
+                style={{ color: themeValues.textSecondary }}
+              >
                 Archivos subidos
               </p>
               <p className="mt-2 text-2xl sm:text-3xl font-semibold">
                 {rows.length}
               </p>
             </div>
-            <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
-              <p className="text-xs sm:text-sm text-white/60">
+            <div
+              className="rounded-2xl p-4 border"
+              style={{
+                backgroundColor: themeValues.cardBg,
+                borderColor: themeValues.border,
+              }}
+            >
+              <p
+                className="text-xs sm:text-sm"
+                style={{ color: themeValues.textSecondary }}
+              >
                 Pistas generadas
               </p>
               <p className="mt-2 text-2xl sm:text-3xl font-semibold">
                 {totalPistas}
               </p>
             </div>
-            <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
-              <p className="text-xs sm:text-sm text-white/60">
+            <div
+              className="rounded-2xl p-4 border"
+              style={{
+                backgroundColor: themeValues.cardBg,
+                borderColor: themeValues.border,
+              }}
+            >
+              <p
+                className="text-xs sm:text-sm"
+                style={{ color: themeValues.textSecondary }}
+              >
                 Último procesamiento
               </p>
               <p className="mt-2 text-sm sm:text-lg">
@@ -517,8 +587,9 @@ export default function UserScreen() {
 
           {/* Encabezado lista (solo desktop) */}
           <div
-            className="hidden sm:grid grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_auto] text-[#e3dddd] text-xs sm:text-sm uppercase tracking-wide px-4 py-2"
+            className="hidden sm:grid grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_auto] text-xs sm:text-sm uppercase tracking-wide px-4 py-2"
             role="row"
+            style={{ color: themeValues.textSecondary }}
           >
             <div>Canción</div>
             <div>Artista / Álbum</div>
@@ -530,7 +601,14 @@ export default function UserScreen() {
           {/* Lista */}
           <div className="space-y-3">
             {rows.length === 0 ? (
-              <div className="px-4 py-8 text-center text-white/70 rounded-2xl border border-dashed border-white/10 text-sm sm:text-base">
+              <div
+                className="px-4 py-8 text-center text-sm sm:text-base rounded-2xl border border-dashed"
+                style={{
+                  backgroundColor: themeValues.cardBg,
+                  borderColor: themeValues.border,
+                  color: themeValues.textSecondary,
+                }}
+              >
                 Aún no has subido archivos. Sube tu primera canción para ver
                 aquí el historial.
               </div>
@@ -538,31 +616,44 @@ export default function UserScreen() {
               rows.map((row) => (
                 <div
                   key={row.id ?? `${row.titulo}-${row.estatus}`}
-                  className="flex flex-col sm:grid sm:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_auto] gap-3 sm:gap-4 items-stretch sm:items-center px-4 py-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/[0.07] transition-colors"
+                  className="flex flex-col sm:grid sm:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_auto] gap-3 sm:gap-4 items-stretch sm:items-center px-4 py-4 rounded-2xl border transition-colors hover:shadow-md"
                   role="row"
+                  style={{
+                    backgroundColor: themeValues.cardBg,
+                    borderColor: themeValues.border,
+                  }}
                 >
                   {/* Título + fecha */}
                   <div className="w-full">
-                    <p className="truncate text-base sm:text-lg font-medium text-white">
+                    <p className="truncate text-base sm:text-lg font-medium">
                       {row.titulo}
                     </p>
-                    <p className="text-[11px] sm:text-xs text-white/50 mt-1">
+                    <p
+                      className="text-[11px] sm:text-xs mt-1"
+                      style={{ color: themeValues.textSecondary }}
+                    >
                       Procesado: {formatDateTime(row.fecha_procesamiento)}
                     </p>
                   </div>
 
                   {/* Artista / Álbum */}
-                  <div className="w-full text-sm text-white/80">
+                  <div className="w-full text-sm">
                     <p className="font-medium">{row.artista}</p>
-                    <p className="text-[11px] sm:text-xs text-white/50">
+                    <p
+                      className="text-[11px] sm:text-xs"
+                      style={{ color: themeValues.textSecondary }}
+                    >
                       {row.album}
                     </p>
                   </div>
 
                   {/* Duración / tamaño */}
-                  <div className="w-full text-sm text-white/80">
+                  <div className="w-full text-sm">
                     <p>{formatSecondsToMSS(row.duracion)}</p>
-                    <p className="text-[11px] sm:text-xs text-white/50">
+                    <p
+                      className="text-[11px] sm:text-xs"
+                      style={{ color: themeValues.textSecondary }}
+                    >
                       {formatMB(row.tamano_mb)}
                     </p>
                   </div>
@@ -573,15 +664,18 @@ export default function UserScreen() {
                       className={
                         "inline-flex items-center px-3 py-1 rounded-full text-[11px] sm:text-xs font-medium " +
                         (row.estatus === "Procesado"
-                          ? "bg-emerald-500/20 text-emerald-300"
+                          ? "bg-emerald-500/20 text-emerald-600"
                           : row.estatus === "Error"
-                            ? "bg-rose-500/20 text-rose-300"
-                            : "bg-yellow-500/20 text-yellow-300")
+                            ? "bg-rose-500/20 text-rose-600"
+                            : "bg-yellow-500/20 text-yellow-700")
                       }
                     >
                       {row.estatus}
                     </span>
-                    <span className="text-[11px] sm:text-xs text-white/60">
+                    <span
+                      className="text-[11px] sm:text-xs"
+                      style={{ color: themeValues.textSecondary }}
+                    >
                       Pistas generadas: {row.pistas_count ?? 0}
                     </span>
                   </div>
@@ -591,8 +685,14 @@ export default function UserScreen() {
                     {/* Ver pistas solo cuando ya está procesado */}
                     {row.estatus === "Procesado" && (
                       <button
-                        onClick={() => handleGoToDownload(row.id, row.titulo)}
-                        className="inline-flex items-center justify-center px-3 py-2 rounded-xl bg-emerald-500/20 text-emerald-200 text-xs sm:text-sm hover:bg-emerald-500/30 w-full sm:w-auto"
+                        onClick={() =>
+                          handleGoToDownload(row.id, row.titulo)
+                        }
+                        className="inline-flex items-center justify-center px-3 py-2 rounded-xl text-xs sm:text-sm hover:bg-emerald-500/30 w-full sm:w-auto"
+                        style={{
+                          backgroundColor: "rgba(16,185,129,0.18)",
+                          color: isLight ? "#065f46" : "#bbf7d0",
+                        }}
                       >
                         Ver pistas
                       </button>
@@ -608,21 +708,32 @@ export default function UserScreen() {
                         )
                       }
                       disabled={!row.id || deletingIds.has(row.id)}
-                      className="inline-flex items-center justify-center px-3 py-2 rounded-xl bg-rose-600/20 text-rose-200 text-xs sm:text-sm hover:bg-rose-600/30 disabled:opacity-50 w-full sm:w-auto"
+                      className="inline-flex items-center justify-center px-3 py-2 rounded-xl text-xs sm:text-sm hover:bg-rose-600/30 disabled:opacity-50 w-full sm:w-auto"
+                      style={{
+                        backgroundColor: "rgba(248,113,113,0.2)",
+                        color: isLight ? "#b91c1c" : "#fecaca",
+                      }}
                     >
                       {row.estatus === "Procesando…" ? "Cancelar" : "Eliminar"}
                     </button>
                   </div>
-
                 </div>
               ))
             )}
           </div>
         </div>
       </section>
+
       {confirmDeleteOpen && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4">
-          <div className="w-full max-w-sm rounded-2xl bg-[#181924] border border-white/10 p-5 shadow-2xl">
+          <div
+            className="w-full max-w-sm rounded-2xl border p-5 shadow-2xl"
+            style={{
+              backgroundColor: themeValues.cardBg,
+              borderColor: themeValues.border,
+              color: themeValues.textPrimary,
+            }}
+          >
             {(() => {
               const isCancel = pendingDelete?.mode === "cancel";
               const title = pendingDelete?.title || "esta canción";
@@ -630,21 +741,36 @@ export default function UserScreen() {
               return (
                 <>
                   <h2 className="text-lg font-semibold mb-2">
-                    {isCancel ? "¿Cancelar procesamiento?" : "¿Eliminar archivo?"}
+                    {isCancel
+                      ? "¿Cancelar procesamiento?"
+                      : "¿Eliminar archivo?"}
                   </h2>
-                  <p className="text-sm text-white/70 mb-4">
+                  <p
+                    className="text-sm mb-4"
+                    style={{ color: themeValues.textSecondary }}
+                  >
                     {isCancel ? (
                       <>
                         ¿Seguro que quieres cancelar el procesamiento de{" "}
-                        <span className="font-medium text-white">“{title}”</span>? El
-                        archivo se eliminará de tu historial y podrás volver a subirlo
-                        cuando quieras.
+                        <span
+                          className="font-medium"
+                          style={{ color: themeValues.textPrimary }}
+                        >
+                          “{title}”
+                        </span>
+                        ? El archivo se eliminará de tu historial y podrás
+                        volver a subirlo cuando quieras.
                       </>
                     ) : (
                       <>
                         ¿Seguro que quieres eliminar{" "}
-                        <span className="font-medium text-white">“{title}”</span>? Esta
-                        acción no se puede deshacer.
+                        <span
+                          className="font-medium"
+                          style={{ color: themeValues.textPrimary }}
+                        >
+                          “{title}”
+                        </span>
+                        ? Esta acción no se puede deshacer.
                       </>
                     )}
                   </p>
@@ -654,7 +780,11 @@ export default function UserScreen() {
                         setConfirmDeleteOpen(false);
                         setPendingDelete(null);
                       }}
-                      className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-sm"
+                      className="px-4 py-2 rounded-xl text-sm"
+                      style={{
+                        backgroundColor: themeValues.inputBg,
+                        color: themeValues.textPrimary,
+                      }}
                     >
                       Volver
                     </button>
@@ -665,11 +795,16 @@ export default function UserScreen() {
                         setPendingDelete(null);
                         if (id) await handleDelete(id); // misma lógica para ambos
                       }}
-                      className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-sm font-medium"
+                      className="px-4 py-2 rounded-xl text-sm font-medium"
+                      style={{
+                        backgroundColor: "#dc2626",
+                        color: "#ffffff",
+                      }}
                     >
-                      {pendingDelete?.mode === "cancel" ? "Sí, cancelar" : "Eliminar"}
+                      {pendingDelete?.mode === "cancel"
+                        ? "Sí, cancelar"
+                        : "Eliminar"}
                     </button>
-
                   </div>
                 </>
               );

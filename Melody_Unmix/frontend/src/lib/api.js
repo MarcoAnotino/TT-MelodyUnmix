@@ -136,6 +136,7 @@ export async function loginEmail({ email, password, remember }) {
   const { data } = await api.post("/api/users/auth/login-email/", {
     email,
     password,
+    remember,  // Indicar al backend si crear cookie persistente o de sesión
   });
   // Data solo trae "access" y "user", el refresh está en cookie.
   setTokens({ access: data.access, persist: remember });

@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import logo from "../assets/images/logoapp-1.png";
+import logoDark from "../assets/images/logoapp-1.png";
+import logoLight from "../assets/images/logoMU_Black.png";
 import { me, logout } from "../lib/api";
+import { useTheme } from "../context/ThemeContext";
 
 function NavLink({ to, children, onClick }) {
   const { pathname } = useLocation();
@@ -34,13 +36,12 @@ function readStoredUser() {
   }
 }
 
-
 export default function Header({ variant = "default" }) {
   const navigate = useNavigate();
+  const { themeValues, isLight, initializeFromUser } = useTheme();
 
   const [user, setUser] = useState(() => {
     // Limpieza defensiva: si no hay access, borra cualquier user colgado
-
     if (!hasAccessToken()) {
       sessionStorage.removeItem("user");
       localStorage.removeItem("user");
@@ -108,6 +109,12 @@ export default function Header({ variant = "default" }) {
         const u = await me();
         if (mounted) {
           setUser(u);
+
+          // Initialize theme from user's preference
+          if (u.theme_preference) {
+            initializeFromUser(u.theme_preference);
+          }
+
           const storage = localStorage.getItem("access")
             ? localStorage
             : sessionStorage;
@@ -119,6 +126,7 @@ export default function Header({ variant = "default" }) {
               first_name: u.first_name,
               last_name: u.last_name,
               avatar_url: u.avatar_url || null,
+              theme_preference: u.theme_preference || "system",
             })
           );
         }
@@ -129,7 +137,7 @@ export default function Header({ variant = "default" }) {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [initializeFromUser]);
 
   useEffect(() => {
     const handler = (e) => {
@@ -171,7 +179,7 @@ export default function Header({ variant = "default" }) {
 
   const onLogout = async () => {
     await logout();
-    // La función logout() ya dispara "app:logout", 
+    // La función logout() ya dispara "app:logout",
     // pero por redundancia limpiamos aquí también para UX instantánea.
     setUser(null);
     setMenuOpen(false);
@@ -202,8 +210,9 @@ export default function Header({ variant = "default" }) {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-
-  const pillBg = variant === "home" ? "bg-black/90" : "bg-black/95";
+  // Use theme-aware background colors
+  const pillBg = variant === "home" ? themeValues.navBg : themeValues.navBgAlt;
+  const logoSrc = isLight ? logoLight : logoDark;
 
   const closeMobileAndGo = (path) => {
     setMobileNavOpen(false);
@@ -232,13 +241,20 @@ export default function Header({ variant = "default" }) {
         className={[
           "relative",
           "w-full max-w-[1065px] h-[56px] sm:h-[60px]",
-          pillBg,
           "rounded-[24px] sm:rounded-[27px]",
           "px-4 sm:px-6 mx-3 sm:mx-4",
           "flex items-center justify-between gap-3",
-          "shadow-[0_10px_25px_rgba(0,0,0,0.35)] ring-1 ring-white/5",
+          "shadow-[0_10px_25px_rgba(0,0,0,0.35)]",
           "backdrop-blur-md",
+          "transition-colors duration-300",
         ].join(" ")}
+        style={{
+          backgroundColor: pillBg,
+          borderWidth: "1px",
+          borderStyle: "solid",
+          borderColor: themeValues.border,
+          color: themeValues.textPrimary,
+        }}
       >
         {/* Izquierda: logo + botón móvil */}
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -248,7 +264,7 @@ export default function Header({ variant = "default" }) {
             className="flex items-center gap-2"
           >
             <img
-              src={logo}
+              src={logoSrc}
               alt="Melody Unmix"
               className="w-12 h-10 sm:w-[80px] sm:h-[68px] object-contain"
               draggable="false"
@@ -261,10 +277,22 @@ export default function Header({ variant = "default" }) {
             className="flex sm:hidden flex-col items-center justify-center w-8 h-8 rounded-md bg-white/5 hover:bg-white/10 gap-[3px]"
             onClick={() => setMobileNavOpen((s) => !s)}
             aria-label="Abrir menú de navegación"
+            style={{
+              backgroundColor: themeValues.cardBg,
+            }}
           >
-            <span className="block w-4 h-[2px] bg-white rounded-full" />
-            <span className="block w-4 h-[2px] bg-white rounded-full" />
-            <span className="block w-4 h-[2px] bg-white rounded-full" />
+            <span
+              className="block w-4 h-[2px] rounded-full"
+              style={{ backgroundColor: themeValues.textPrimary }}
+            />
+            <span
+              className="block w-4 h-[2px] rounded-full"
+              style={{ backgroundColor: themeValues.textPrimary }}
+            />
+            <span
+              className="block w-4 h-[2px] rounded-full"
+              style={{ backgroundColor: themeValues.textPrimary }}
+            />
           </button>
         </div>
 
@@ -308,6 +336,11 @@ export default function Header({ variant = "default" }) {
                 ring-1 ring-white/10
                 whitespace-nowrap
               "
+              style={{
+                backgroundColor: themeValues.inputBg,
+                color: themeValues.textPrimary,
+                borderColor: themeValues.border,
+              }}
             >
               Regístrate
             </Link>
@@ -317,11 +350,17 @@ export default function Header({ variant = "default" }) {
             <button
               onClick={() => setMenuOpen((s) => !s)}
               className="
-                bg-[#0c0c0c] rounded-full pl-2 pr-2 py-1.5 sm:py-2
-                flex items-center gap-2 hover:bg-[#131313]
+                rounded-full pl-2 pr-2 py-1.5 sm:py-2
+                flex items-center gap-2
+                transition-colors
               "
               aria-haspopup="menu"
               aria-expanded={menuOpen}
+              style={{
+                backgroundColor: themeValues.cardBg,
+                color: themeValues.textPrimary,
+                border: `1px solid ${themeValues.border}`,
+              }}
             >
               {user?.avatar_url ? (
                 <img
@@ -340,12 +379,12 @@ export default function Header({ variant = "default" }) {
                 >
                   <path
                     d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z"
-                    fill="#9AE6B4"
+                    fill="#08D9D6"
                   />
                 </svg>
               )}
 
-              <span className="max-w-[120px] sm:max-w-none truncate text-xs sm:text-sm text-white/90">
+              <span className="max-w-[120px] sm:max-w-none truncate text-xs sm:text-sm">
                 Hola, {user.username || "Usuario"}
               </span>
 
@@ -358,7 +397,7 @@ export default function Header({ variant = "default" }) {
                 <path
                   d="M7 10l5 5 5-5"
                   fill="none"
-                  stroke="#fff"
+                  stroke={themeValues.textPrimary}
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -371,18 +410,23 @@ export default function Header({ variant = "default" }) {
                 role="menu"
                 className="
                   absolute right-0 mt-2 w-40 sm:w-44
-                  rounded-xl bg-[#0c0c0c]
-                  ring-1 ring-white/10 shadow-xl overflow-hidden
+                  rounded-xl shadow-xl overflow-hidden
                   text-sm
                 "
+                style={{
+                  backgroundColor: themeValues.navBgAlt,
+                  border: `1px solid ${themeValues.border}`,
+                  color: themeValues.textPrimary,
+                }}
               >
                 <button
                   onClick={() => {
                     setMenuOpen(false);
                     navigate("/profile");
                   }}
-                  className="w-full text-left px-4 py-2.5 text-white/90 hover:bg-white/5"
+                  className="w-full text-left px-4 py-2.5 hover:bg-white/5"
                   role="menuitem"
+                  style={{ color: themeValues.textPrimary }}
                 >
                   Perfil
                 </button>
@@ -391,15 +435,17 @@ export default function Header({ variant = "default" }) {
                     setMenuOpen(false);
                     navigate("/app");
                   }}
-                  className="w-full text-left px-4 py-2.5 text-white/90 hover:bg-white/5"
+                  className="w-full text-left px-4 py-2.5 hover:bg-white/5"
                   role="menuitem"
+                  style={{ color: themeValues.textPrimary }}
                 >
                   Mis archivos
                 </button>
                 <button
                   onClick={onLogout}
-                  className="w-full text-left px-4 py-2.5 text-red-300 hover:bg-white/5"
+                  className="w-full text-left px-4 py-2.5 hover:bg-white/5"
                   role="menuitem"
+                  style={{ color: "#fecaca" }}
                 >
                   Cerrar sesión
                 </button>
@@ -411,7 +457,14 @@ export default function Header({ variant = "default" }) {
         {/* Panel de navegación móvil */}
         {mobileNavOpen && (
           <div className="absolute left-0 right-0 top-full mt-2 sm:hidden">
-            <div className="mx-3 rounded-2xl bg-[#0c0c0c] border border-white/10 shadow-xl p-4 space-y-3 text-sm">
+            <div
+              className="mx-3 rounded-2xl border shadow-xl p-4 space-y-3 text-sm"
+              style={{
+                backgroundColor: themeValues.navBgAlt,
+                borderColor: themeValues.border,
+                color: themeValues.textPrimary,
+              }}
+            >
               {!user && (
                 <>
                   <NavLink to="/" onClick={() => setMobileNavOpen(false)}>
@@ -436,18 +489,26 @@ export default function Header({ variant = "default" }) {
                 </>
               )}
 
-              <div className="border-t border-white/10 pt-3 mt-2 flex flex-col gap-2">
+              <div className="border-t pt-3 mt-2 flex flex-col gap-2" style={{ borderColor: themeValues.border }}>
                 {!user ? (
                   <>
                     <button
                       onClick={() => closeMobileAndGo("/signin")}
-                      className="w-full rounded-xl bg-[#08D9D6] text-[#0e0e0e] py-2 font-semibold"
+                      className="w-full rounded-xl py-2 font-semibold"
+                      style={{
+                        backgroundColor: "#08D9D6",
+                        color: "#0e0e0e",
+                      }}
                     >
                       Iniciar sesión
                     </button>
                     <button
                       onClick={() => closeMobileAndGo("/signup")}
-                      className="w-full rounded-xl bg-white/10 text-white py-2 font-semibold"
+                      className="w-full rounded-xl py-2 font-semibold"
+                      style={{
+                        backgroundColor: themeValues.inputBg,
+                        color: themeValues.textPrimary,
+                      }}
                     >
                       Crear cuenta
                     </button>
@@ -455,7 +516,11 @@ export default function Header({ variant = "default" }) {
                 ) : (
                   <button
                     onClick={onLogout}
-                    className="w-full rounded-xl bg-rose-600/20 text-rose-200 py-2 font-semibold"
+                    className="w-full rounded-xl py-2 font-semibold"
+                    style={{
+                      backgroundColor: "rgba(248,113,113,0.15)",
+                      color: "#fecaca",
+                    }}
                   >
                     Cerrar sesión
                   </button>

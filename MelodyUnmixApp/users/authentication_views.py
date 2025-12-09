@@ -41,13 +41,16 @@ class CookieTokenRefreshView(TokenRefreshView):
         
         if 'refresh' in token_data:
             # Si hay un nuevo refresh token (rotación activada), actualizamos la cookie
+            # Nota: No seteamos max_age para preservar el comportamiento de sesión
+            # Si el login original fue con "recordarme", el navegador ya tiene la cookie persistente
+            # Si fue sin "recordarme", esta cookie de sesión se borrará al cerrar el navegador
             response.set_cookie(
                 key='refresh_token',
                 value=token_data['refresh'],
                 httponly=True,
                 secure=not settings.DEBUG, # True en prod (https)
                 samesite='Lax', # O 'None' si frontend y backend están en dominios distintos y usas HTTPS
-                max_age=7 * 24 * 60 * 60 # 7 días, debería coincidir con SIMPLE_JWT settings
+                # Sin max_age: hereda comportamiento de sesión del navegador
             )
             # Lo quitamos del body para no exponerlo
             del token_data['refresh']

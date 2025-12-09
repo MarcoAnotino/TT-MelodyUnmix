@@ -15,6 +15,9 @@ import {
 } from "react-router-dom";
 import ScrollReveal from "scrollreveal";
 
+// Contexto de tema
+import { ThemeProvider } from "./context/ThemeContext";
+
 // Páginas públicas
 import Home from "./pages/Home";
 import About from "./pages/About";
@@ -166,66 +169,68 @@ function LogoutRedirector() {
 
 export default function App() {
   return (
-    <Router>
-      <LogoutRedirector />
-      <AppLayout>
-        <Routes>
-          {/* Públicas */}
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
+    <ThemeProvider>
+      <Router>
+        <LogoutRedirector />
+        <AppLayout>
+          <Routes>
+            {/* Públicas */}
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
 
-          {/* Auth */}
-          <Route path="/signin" element={<SignIn />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          {/* Email verification */}
-          <Route path="/email-verify" element={<EmailVerify />} />
-          {/* Petición + confirmación de reseteo */}
-          <Route path="/reset-verify" element={<ResetVerify />} />
-          <Route
-            path="/reset-password/:uid/:token"
-            element={<ResetPassword />}
-          />
-          <Route path="/reset-done" element={<ResetDone />} />
+            {/* Auth */}
+            <Route path="/signin" element={<SignIn />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            {/* Email verification */}
+            <Route path="/email-verify" element={<EmailVerify />} />
+            {/* Petición + confirmación de reseteo */}
+            <Route path="/reset-verify" element={<ResetVerify />} />
+            <Route
+              path="/reset-password/:uid/:token"
+              element={<ResetPassword />}
+            />
+            <Route path="/reset-done" element={<ResetDone />} />
 
-          <Route path="/delete-account" element={<DeleteAccount />} />
+            <Route path="/delete-account" element={<DeleteAccount />} />
 
-          {/* Área autenticada */}
-          <Route
-            path="/app"
-            element={
-              <ProtectedRoute>
-                <UserScreen />
-              </ProtectedRoute>
-            }
-          />
+            {/* Área autenticada */}
+            <Route
+              path="/app"
+              element={
+                <ProtectedRoute>
+                  <UserScreen />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Detalle/descargas */}
-          <Route path="/tracks/:id" element={<UploadedScreen />} />
+            {/* Detalle/descargas */}
+            <Route path="/tracks/:id" element={<UploadedScreen />} />
 
-          {/* Compatibilidad nombre anterior */}
-          <Route path="/UploadedScreen/:id" element={<UploadedScreen />} />
-          <Route
-            path="/UploadedScreen"
-            element={<Navigate to="/app" replace />}
-          />
+            {/* Compatibilidad nombre anterior */}
+            <Route path="/UploadedScreen/:id" element={<UploadedScreen />} />
+            <Route
+              path="/UploadedScreen"
+              element={<Navigate to="/app" replace />}
+            />
 
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Términos y condiciones */}
-          <Route path="/terms" element={<Terms />} />
+            {/* Términos y condiciones */}
+            <Route path="/terms" element={<Terms />} />
 
-          {/* 404 */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </AppLayout>
-    </Router>
+            {/* 404 */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AppLayout>
+      </Router>
+    </ThemeProvider>
   );
 }

@@ -10,6 +10,7 @@ User = get_user_model()
 class EmailLoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, trim_whitespace=False)
+    remember = serializers.BooleanField(default=False, required=False)
 
     def validate(self, attrs):
         email = attrs.get("email")
@@ -37,6 +38,7 @@ class EmailTokenObtainPairView(APIView):
         serializer = EmailLoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
+        remember = serializer.validated_data.get("remember", False)
 
         refresh = RefreshToken.for_user(user)
         
@@ -57,13 +59,21 @@ class EmailTokenObtainPairView(APIView):
 
         # Seteamos el refresh token en cookie HTTP-Only
         from django.conf import settings
-        response.set_cookie(
-            key='refresh_token',
-            value=str(refresh),
-            httponly=True,
-            secure=not settings.DEBUG,  # True en prod
-            samesite='Lax',             # Ajustar si es cross-site
-            max_age=7 * 24 * 60 * 60    # 7 días
-        )
+        
+        # Cookie params: persistent vs session
+        cookie_kwargs = {
+            'key': 'refresh_token',
+            'value': str(refresh),
+            'httponly': True,
+            'secure': not settings.DEBUG,  # True en prod
+            'samesite': 'Lax',              # Ajustar si es cross-site
+        }
+        
+        if remember:
+            # Cookie persistente: sobrevive al cierre del navegador
+            cookie_kwargs['max_age'] = 7 * 24 * 60 * 60  # 7 días
+        # Si no hay max_age -> cookie de sesión, se borra al cerrar navegador
+        
+        response.set_cookie(**cookie_kwargs)
 
         return response
