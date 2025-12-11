@@ -3,13 +3,15 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "../components/Header";
 import { me, updateProfile } from "../lib/api";
+import { useTheme } from "../context/ThemeContext";
 
 export default function Profile() {
+  const { theme, setTheme, themeValues, isLight } = useTheme();
+
   const [firstName, setFirstName] = useState("");
-  const [lastName,  setLastName]  = useState("");
-  const [username,  setUsername]  = useState("");
-  const [email,     setEmail]     = useState("");
-  const [theme,     setTheme]     = useState("system");
+  const [lastName, setLastName] = useState("");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
 
   const [initialLoading, setInitialLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -90,6 +92,7 @@ export default function Profile() {
       const formData = new FormData();
       formData.append("first_name", firstName);
       formData.append("last_name", lastName);
+      formData.append("theme_preference", theme);
 
       if (avatarFile) {
         formData.append("avatar", avatarFile);
@@ -123,6 +126,7 @@ export default function Profile() {
         first_name: updated.first_name,
         last_name: updated.last_name,
         avatar_url: updated.avatar_url || null,
+        theme_preference: updated.theme_preference || theme,
       };
 
       storage.setItem("user", JSON.stringify(snapshot));
@@ -140,7 +144,13 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,rgba(51,60,78,1)_3%,rgba(37,42,52,1)_49%,rgba(21,21,22,1)_95%)] text-white">
+    <div
+      className="min-h-screen transition-colors duration-300"
+      style={{
+        background: themeValues.background,
+        color: themeValues.textPrimary,
+      }}
+    >
       <Header variant="home" />
       <div className="pt-8" />
 
@@ -149,22 +159,42 @@ export default function Profile() {
           <h1 className="text-[clamp(24px,6vw,40px)] font-mazzard-h-medium">
             Tu perfil
           </h1>
-          <p className="text-sm sm:text-base text-white/70 max-w-xl mx-auto sm:mx-0">
+          <p
+            className="text-sm sm:text-base max-w-xl mx-auto sm:mx-0"
+            style={{ color: themeValues.textSecondary }}
+          >
             Administra tu información básica, tu foto y algunas preferencias
             visuales de Melody Unmix.
           </p>
         </header>
 
         {initialLoading ? (
-          <p className="mt-6 text-center sm:text-left text-white/70">
+          <p
+            className="mt-6 text-center sm:text-left"
+            style={{ color: themeValues.textSecondary }}
+          >
             Cargando perfil…
           </p>
         ) : (
           <section className="mt-8 grid gap-6">
             {/* Bloque: Foto de perfil + datos */}
-            <div className="rounded-2xl bg-black/40 border border-white/10 p-5 sm:p-6 space-y-6 backdrop-blur-sm">
+            <div
+              className="rounded-2xl p-5 sm:p-6 space-y-6 backdrop-blur-sm transition-colors duration-300 border"
+              style={{
+                backgroundColor: themeValues.cardBg,
+                borderColor: themeValues.border,
+              }}
+            >
               <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
-                <div className="mx-auto sm:mx-0 h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-white/5 border border-white/10 overflow-hidden flex items-center justify-center shrink-0">
+                <div
+                  className="mx-auto sm:mx-0 h-20 w-20 sm:h-24 sm:w-24 rounded-full overflow-hidden flex items-center justify-center shrink-0 border"
+                  style={{
+                    backgroundColor: isLight
+                      ? "rgba(0,0,0,0.05)"
+                      : "rgba(255,255,255,0.05)",
+                    borderColor: themeValues.border,
+                  }}
+                >
                   {avatarPreview ? (
                     <img
                       src={avatarPreview}
@@ -172,16 +202,32 @@ export default function Profile() {
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <span className="text-xs text-white/60 text-center px-2">
+                    <span
+                      className="text-xs text-center px-2"
+                      style={{ color: themeValues.textSecondary }}
+                    >
                       Sin foto
                     </span>
                   )}
                 </div>
 
                 <div className="space-y-2 text-center sm:text-left">
-                  <p className="text-sm text-white/80">Foto de perfil</p>
+                  <p
+                    className="text-sm"
+                    style={{ color: themeValues.textSecondary }}
+                  >
+                    Foto de perfil
+                  </p>
                   <div className="flex flex-wrap justify-center sm:justify-start items-center gap-2">
-                    <label className="inline-flex items-center gap-2 text-sm cursor-pointer px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10">
+                    <label
+                      className="inline-flex items-center gap-2 text-sm cursor-pointer px-3 py-2 rounded-xl transition-colors border"
+                      style={{
+                        backgroundColor: isLight
+                          ? "rgba(0,0,0,0.05)"
+                          : "rgba(255,255,255,0.1)",
+                        borderColor: themeValues.border,
+                      }}
+                    >
                       <input
                         type="file"
                         accept="image/*"
@@ -221,46 +267,88 @@ export default function Profile() {
                       </button>
                     )}
                   </div>
-                  <p className="text-[11px] sm:text-xs text-white/60">
+                  <p
+                    className="text-[11px] sm:text-xs"
+                    style={{ color: themeValues.textSecondary }}
+                  >
                     JPG, PNG o WEBP, máx. 2&nbsp;MB.
                   </p>
                 </div>
               </div>
 
-              <div className="h-px w-full bg-white/5" />
+              <div
+                className="h-px w-full"
+                style={{
+                  backgroundColor: isLight
+                    ? "rgba(0,0,0,0.08)"
+                    : "rgba(255,255,255,0.06)",
+                }}
+              />
 
               {/* Datos editables */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <label className="block text-sm text-white/80">
+                <label
+                  className="block text-sm"
+                  style={{ color: themeValues.textSecondary }}
+                >
                   Nombre
                   <input
-                    className="mt-2 w-full rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-sm sm:text-base outline-none focus:ring-2 focus:ring-[#08D9D6]/60"
+                    className="mt-2 w-full rounded-xl px-3 py-2 text-sm sm:text-base outline-none focus:ring-2 focus:ring-[#08D9D6]/60 transition-colors border"
+                    style={{
+                      backgroundColor: themeValues.inputBg,
+                      borderColor: themeValues.border,
+                      color: themeValues.textPrimary,
+                    }}
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     placeholder="Ej. Marco Antonio"
                   />
                 </label>
-                <label className="block text-sm text-white/80">
+                <label
+                  className="block text-sm"
+                  style={{ color: themeValues.textSecondary }}
+                >
                   Apellidos
                   <input
-                    className="mt-2 w-full rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-sm sm:text-base outline-none focus:ring-2 focus:ring-[#08D9D6]/60"
+                    className="mt-2 w-full rounded-xl px-3 py-2 text-sm sm:text-base outline-none focus:ring-2 focus:ring-[#08D9D6]/60 transition-colors border"
+                    style={{
+                      backgroundColor: themeValues.inputBg,
+                      borderColor: themeValues.border,
+                      color: themeValues.textPrimary,
+                    }}
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     placeholder="Ej. Jimenez Morales"
                   />
                 </label>
-                <label className="block text-sm text-white/80">
+                <label
+                  className="block text-sm"
+                  style={{ color: themeValues.textSecondary }}
+                >
                   Usuario
                   <input
-                    className="mt-2 w-full rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-sm sm:text-base outline-none opacity-70"
+                    className="mt-2 w-full rounded-xl px-3 py-2 text-sm sm:text-base outline-none opacity-70 border"
+                    style={{
+                      backgroundColor: themeValues.inputBg,
+                      borderColor: themeValues.border,
+                      color: themeValues.textPrimary,
+                    }}
                     value={username}
                     disabled
                   />
                 </label>
-                <label className="block text-sm text-white/80">
+                <label
+                  className="block text-sm"
+                  style={{ color: themeValues.textSecondary }}
+                >
                   Correo
                   <input
-                    className="mt-2 w-full rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-sm sm:text-base outline-none opacity-70"
+                    className="mt-2 w-full rounded-xl px-3 py-2 text-sm sm:text-base outline-none opacity-70 border"
+                    style={{
+                      backgroundColor: themeValues.inputBg,
+                      borderColor: themeValues.border,
+                      color: themeValues.textPrimary,
+                    }}
                     value={email}
                     disabled
                   />
@@ -269,18 +357,35 @@ export default function Profile() {
             </div>
 
             {/* Preferencias */}
-            <div className="rounded-2xl bg-black/40 border border-white/10 p-5 sm:p-6 backdrop-blur-sm">
+            <div
+              className="rounded-2xl p-5 sm:p-6 backdrop-blur-sm transition-colors duration-300 border"
+              style={{
+                backgroundColor: themeValues.cardBg,
+                borderColor: themeValues.border,
+              }}
+            >
               <h2 className="text-lg sm:text-xl mb-1 font-mazzard-h-medium text-center sm:text-left">
                 Preferencias
               </h2>
-              <p className="text-xs text-white/60 mb-4 text-center sm:text-left">
+              <p
+                className="text-xs mb-4 text-center sm:text-left"
+                style={{ color: themeValues.textSecondary }}
+              >
                 Ajusta cómo se ve la interfaz de Melody Unmix en tu dispositivo.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <label className="block text-sm text-white/80">
+                <label
+                  className="block text-sm"
+                  style={{ color: themeValues.textSecondary }}
+                >
                   Tema
                   <select
-                    className="mt-2 w-full rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-sm sm:text-base outline-none focus:ring-2 focus:ring-[#08D9D6]/60"
+                    className="mt-2 w-full rounded-xl px-3 py-2 text-sm sm:text-base outline-none focus:ring-2 focus:ring-[#08D9D6]/60 transition-colors border"
+                    style={{
+                      backgroundColor: themeValues.inputBg,
+                      borderColor: themeValues.border,
+                      color: themeValues.textPrimary,
+                    }}
                     value={theme}
                     onChange={(e) => setTheme(e.target.value)}
                   >
@@ -314,8 +419,14 @@ export default function Profile() {
                 )}
               </div>
 
-              <div className="border-t border-white/10 pt-4 sm:pt-0 sm:border-t-0 sm:pl-6 sm:border-l sm:border-white/10 text-center sm:text-left">
-                <p className="text-[11px] sm:text-xs text-white/60 mb-2">
+              <div
+                className="pt-4 sm:pt-0 sm:pl-6 text-center sm:text-left border-t sm:border-t-0 sm:border-l"
+                style={{ borderColor: themeValues.border }}
+              >
+                <p
+                  className="text-[11px] sm:text-xs mb-2"
+                  style={{ color: themeValues.textSecondary }}
+                >
                   ¿Quieres darte de baja definitivamente?
                 </p>
                 <Link

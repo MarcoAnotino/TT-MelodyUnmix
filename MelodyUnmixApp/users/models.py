@@ -11,10 +11,21 @@ class Usuario(AbstractUser):
         ADMIN = 'ADMIN', 'Administrador'
         USER = 'USER', 'Usuario normal'
 
+    class ThemeChoices(models.TextChoices):
+        SYSTEM = 'system', 'Sistema'
+        LIGHT = 'light', 'Claro'
+        DARK = 'dark', 'Oscuro'
+
     rol = models.CharField(
         max_length=10,
         choices=Roles.choices,
         default=Roles.USER,
+    )
+
+    theme_preference = models.CharField(
+        max_length=10,
+        choices=ThemeChoices.choices,
+        default=ThemeChoices.SYSTEM,
     )
     fecha_registro = models.DateTimeField(auto_now_add=True)
 

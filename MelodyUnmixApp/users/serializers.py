@@ -84,6 +84,7 @@ class UserSerializer(serializers.ModelSerializer):
             "is_active",
             "avatar",       
             "avatar_url",
+            "theme_preference",
         )
         read_only_fields = ("fecha_registro", "is_active", "avatar_url")
 

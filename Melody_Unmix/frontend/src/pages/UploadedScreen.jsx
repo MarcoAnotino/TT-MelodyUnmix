@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import Header from "../components/Header";
 import { api } from "../lib/api";
+import { useTheme } from "../context/ThemeContext";
 
 // Assets
 import image1 from "../assets/images/image-1.png"; // Voz
@@ -36,6 +37,7 @@ export default function UploadedScreen() {
   const { id } = useParams(); // /tracks/:id
   const location = useLocation();
   const navigate = useNavigate();
+  const { themeValues, isLight } = useTheme();
 
   const initialTitle = stripExtension(location.state?.title || "Tu canción");
   const [title, setTitle] = useState(initialTitle);
@@ -50,28 +52,58 @@ export default function UploadedScreen() {
       "px-3 py-1 rounded-full text-xs sm:text-sm flex items-center gap-2";
     if (status === "procesado")
       return (
-        <span className={`${base} bg-emerald-500/20 text-emerald-300`}>
-          <span className="inline-block w-2 h-2 rounded-full bg-emerald-300" />
+        <span
+          className={base}
+          style={{
+            backgroundColor: "rgba(16,185,129,0.18)",
+            color: isLight ? "#047857" : "#bbf7d0",
+          }}
+        >
+          <span
+            className="inline-block w-2 h-2 rounded-full"
+            style={{ backgroundColor: isLight ? "#10b981" : "#6ee7b7" }}
+          />
           Listo
         </span>
       );
     if (status === "procesando")
       return (
-        <span className={`${base} bg-yellow-500/20 text-yellow-300`}>
+        <span
+          className={base}
+          style={{
+            backgroundColor: "rgba(234,179,8,0.18)",
+            color: isLight ? "#854d0e" : "#facc15",
+          }}
+        >
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-300 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-300" />
+            <span
+              className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+              style={{ backgroundColor: isLight ? "#eab308" : "#facc15" }}
+            />
+            <span
+              className="relative inline-flex rounded-full h-2 w-2"
+              style={{ backgroundColor: isLight ? "#eab308" : "#facc15" }}
+            />
           </span>
           Procesando…
         </span>
       );
     return (
-      <span className={`${base} bg-rose-500/20 text-rose-300`}>
-        <span className="inline-block w-2 h-2 rounded-full bg-rose-300" />
+      <span
+        className={base}
+        style={{
+          backgroundColor: "rgba(248,113,113,0.2)",
+          color: isLight ? "#b91c1c" : "#fecaca",
+        }}
+      >
+        <span
+          className="inline-block w-2 h-2 rounded-full"
+          style={{ backgroundColor: isLight ? "#ef4444" : "#fecaca" }}
+        />
         Error
       </span>
     );
-  }, [status]);
+  }, [status, isLight]);
 
   // Redirige si falta id
   useEffect(() => {
@@ -137,7 +169,6 @@ export default function UploadedScreen() {
     try {
       const res = await api.get(`/api/audios/${id}/download/${stemKey}`, {
         responseType: "blob",
-        // Acepta 404 dentro del try para poder dar mensaje específico
         validateStatus: (status) =>
           (status >= 200 && status < 300) || status === 404,
       });
@@ -156,7 +187,8 @@ export default function UploadedScreen() {
         const ct = (res.headers["content-type"] || "").toLowerCase();
         const isZip = ct.includes("zip") || stemKey === "all";
         const ext = isZip ? "zip" : "wav";
-        filename = `${(title || "audio").replace(/\s+/g, "_")}-${stemKey}.${ext}`;
+        filename = `${(title || "audio")
+          .replace(/\s+/g, "_")}-${stemKey}.${ext}`;
       }
 
       const blobUrl = URL.createObjectURL(new Blob([res.data]));
@@ -171,46 +203,81 @@ export default function UploadedScreen() {
       console.error("Error descargando stem:", err);
       const status = err?.response?.status;
       if (status === 401) {
-        // En teoría el interceptor ya hizo refresh y reintento;
-        // si aún así caemos aquí, es que ya no hay sesión válida.
         alert("Tu sesión expiró. Inicia sesión nuevamente.");
       } else {
-        alert("No se pudo descargar este archivo. Verifica que está disponible.");
+        alert(
+          "No se pudo descargar este archivo. Verifica que está disponible."
+        );
       }
     } finally {
       setTimeout(() => setLoading(false), 400);
     }
   };
 
+  // Fondo del círculo según tema
+  const getCircleBg = () =>
+    isLight ? "rgba(0,0,0,0.06)" : "rgba(0,0,0,0.35)";
 
+  const getCircleAllBg = () =>
+    isLight ? "rgba(0,0,0,0.08)" : "rgba(0,0,0,0.45)";
 
   return (
-    <div className="min-h-screen w-full bg-[linear-gradient(180deg,rgba(51,60,78,1)_3%,rgba(37,42,52,1)_49%,rgba(21,21,22,1)_95%)] text-white">
+    <div
+      className="min-h-screen w-full transition-colors duration-300"
+      style={{
+        background: themeValues.background,
+        color: themeValues.textPrimary,
+      }}
+    >
       <Header />
 
       {/* Encabezado canción */}
       <section className="max-w-5xl mx-auto mt-20 sm:mt-16 px-4 sm:px-6">
-        <p className="text-[11px] sm:text-sm uppercase tracking-[0.15em] text-white/50 text-center sm:text-left">
+        <p
+          className="text-[11px] sm:text-sm uppercase tracking-[0.15em] text-center sm:text-left"
+          style={{ color: themeValues.textSecondary }}
+        >
           Resultado del procesamiento
         </p>
         <div className="mt-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
           <h1 className="text-[clamp(24px,6vw,40px)] font-semibold text-center sm:text-left">
             {title}
           </h1>
-          <div className="flex justify-center sm:justify-start">{statusBadge}</div>
+          <div className="flex justify-center sm:justify-start">
+            {statusBadge}
+          </div>
         </div>
-        <p className="text-[#e7e7e7] text-[clamp(14px,4.5vw,20px)] mt-4 text-center sm:text-left">
+        <p
+          className="text-[clamp(14px,4.5vw,20px)] mt-4 text-center sm:text-left"
+          style={{ color: themeValues.textSecondary }}
+        >
           {isReady
             ? "Tu canción está lista. Descarga las pistas individuales o el paquete completo."
             : "Estamos separando tu canción en stems con nuestra IA. Esto puede tardar unos instantes…"}
         </p>
 
         {!isReady && !error && (
-          <div className="mt-4 flex flex-col sm:flex-row items-center gap-3 text-xs sm:text-sm text-white/60">
-            <div className="w-full sm:w-52 h-1 rounded-full bg-white/10 overflow-hidden">
-              <div className="h-full w-1/3 rounded-full bg-white/40 animate-[pulse_1.8s_ease-in-out_infinite]" />
+          <div className="mt-4 flex flex-col sm:flex-row items-center gap-3 text-xs sm:text-sm">
+            <div
+              className="w-full sm:w-52 h-1 rounded-full overflow-hidden"
+              style={{
+                backgroundColor: isLight
+                  ? "rgba(0,0,0,0.08)"
+                  : "rgba(255,255,255,0.1)",
+              }}
+            >
+              <div
+                className="h-full w-1/3 rounded-full animate-[pulse_1.8s_ease-in-out_infinite]"
+                style={{
+                  backgroundColor: isLight
+                    ? "rgba(0,0,0,0.25)"
+                    : "rgba(255,255,255,0.4)",
+                }}
+              />
             </div>
-            <span>Procesando audio…</span>
+            <span style={{ color: themeValues.textSecondary }}>
+              Procesando audio…
+            </span>
           </div>
         )}
       </section>
@@ -232,7 +299,10 @@ export default function UploadedScreen() {
                 aria-label={`Descargar ${s.label}`}
                 title={isReady ? `Descargar ${s.label}` : "Procesando..."}
               >
-                <div className="rounded-full bg-black/20 p-2 sm:p-3 shadow-[0_0_40px_rgba(0,0,0,0.6)]">
+                <div
+                  className="rounded-full p-2 sm:p-3 shadow-[0_0_40px_rgba(0,0,0,0.35)]"
+                  style={{ backgroundColor: getCircleBg() }}
+                >
                   <img
                     src={s.img}
                     alt={s.label}
@@ -243,7 +313,10 @@ export default function UploadedScreen() {
               <span className="mt-3 sm:mt-4 text-xl sm:text-2xl font-medium">
                 {s.label}
               </span>
-              <span className="mt-1 text-xs sm:text-sm text-white/60">
+              <span
+                className="mt-1 text-xs sm:text-sm"
+                style={{ color: themeValues.textSecondary }}
+              >
                 {isReady ? "Listo para descargar" : "Aún procesando"}
               </span>
             </div>
@@ -263,7 +336,15 @@ export default function UploadedScreen() {
               aria-label="Descargar todos"
               title={isReady ? "Descargar todos" : "Procesando..."}
             >
-              <div className="rounded-full bg-black/30 p-2 sm:p-3 shadow-[0_0_50px_rgba(0,0,0,0.8)] border border-white/15">
+              <div
+                className="rounded-full p-2 sm:p-3 shadow-[0_0_50px_rgba(0,0,0,0.5)] border"
+                style={{
+                  backgroundColor: getCircleAllBg(),
+                  borderColor: isLight
+                    ? "rgba(0,0,0,0.1)"
+                    : "rgba(255,255,255,0.15)",
+                }}
+              >
                 <img
                   src={image6}
                   alt="Download All"
@@ -279,7 +360,10 @@ export default function UploadedScreen() {
             <span className="mt-3 sm:mt-4 text-xl sm:text-2xl font-semibold">
               Download All
             </span>
-            <span className="mt-1 text-xs sm:text-sm text-white/60 text-center max-w-xs">
+            <span
+              className="mt-1 text-xs sm:text-sm text-center max-w-xs"
+              style={{ color: themeValues.textSecondary }}
+            >
               Descarga todas las pistas en un solo archivo .zip
             </span>
           </div>
@@ -289,13 +373,22 @@ export default function UploadedScreen() {
         <div className="mt-14 sm:mt-16 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
           <button
             onClick={() => navigate(-1)}
-            className="w-full sm:w-auto px-5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-sm sm:text-base text-center"
+            className="w-full sm:w-auto px-5 py-2 rounded-xl text-sm sm:text-base text-center border"
+            style={{
+              backgroundColor: themeValues.inputBg,
+              borderColor: themeValues.border,
+              color: themeValues.textPrimary,
+            }}
           >
             Regresar
           </button>
           <button
             onClick={() => navigate("/app")}
-            className="w-full sm:w-auto px-5 py-2 rounded-xl bg-[#3e4070] hover:bg-[#4a4d8a] text-sm sm:text-base text-center"
+            className="w-full sm:w-auto px-5 py-2 rounded-xl text-sm sm:text-base text-center"
+            style={{
+              backgroundColor: "#3e4070",
+              color: "#ffffff",
+            }}
           >
             Ir a mis archivos
           </button>
@@ -303,11 +396,18 @@ export default function UploadedScreen() {
 
         {error && (
           <div className="max-w-5xl mx-auto mt-6">
-            <div className="px-4 py-3 rounded-lg bg-rose-500/15 text-rose-300 border border-rose-400/20 text-sm sm:text-base">
+            <div className="px-4 py-3 rounded-lg text-sm sm:text-base border"
+              style={{
+                backgroundColor: "rgba(248,113,113,0.15)",
+                color: isLight ? "#b91c1c" : "#fecaca",
+                borderColor: "rgba(248,113,113,0.4)",
+              }}
+            >
               {error}{" "}
               <button
                 className="underline ml-1"
                 onClick={() => navigate("/app")}
+                style={{ color: isLight ? "#7f1d1d" : "#ffe4e6" }}
               >
                 Volver a mis archivos
               </button>

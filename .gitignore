@@ -98,4 +98,5 @@ input_audio
 output_audio
 
 # Limpieza de base de datos
+**/users/management
 cleandb.py
