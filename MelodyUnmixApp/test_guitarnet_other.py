@@ -22,7 +22,7 @@ def test_guitarnet_with_other():
     Prueba individual de GuitarNet usando el stem "other"
     """
     # Rutas
-    other_wav = Path("output_audio/user_1/audio_1/mdx_extra_q/That's What You Get/other.wav")
+    other_wav = Path("/Users/marcoanotino/Documents/TT-MelodyUnmix/MelodyUnmixApp/output_audio/user_1/audio_5/mdx_extra_q/Forgiveness/guitar.wav")
     model_path = Path("models/guitarnet_model.pth")
     output_dir = Path("test_guitarnet_output")
     

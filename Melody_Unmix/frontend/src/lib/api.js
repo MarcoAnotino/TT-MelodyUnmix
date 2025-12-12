@@ -46,6 +46,52 @@ function readToken(key) {
   return sessionStorage.getItem(key) ?? localStorage.getItem(key);
 }
 
+// ---------- Refresh proactivo: renueva token mientras el usuario está activo ----------
+const REFRESH_INTERVAL_MS = 30 * 60 * 1000; // 30 minutos (el token dura 1 hora)
+let refreshIntervalId = null;
+
+async function silentRefresh() {
+  const access = readToken("access");
+  if (!access) return; // No hay sesión activa, no intentar refresh
+
+  try {
+    const r = await base.post("/api/users/auth/refresh/");
+    const store = getStore();
+    store.setItem("access", r.data.access);
+    console.log("[api.js] Token refrescado proactivamente");
+  } catch (e) {
+    console.warn("[api.js] Refresh proactivo falló, la sesión puede expirar pronto", e);
+    // No cerramos sesión aquí - dejamos que el interceptor de 401 lo maneje cuando realmente expire
+  }
+}
+
+export function startProactiveRefresh() {
+  stopProactiveRefresh(); // Limpiar cualquier intervalo anterior
+
+  // Refrescar inmediatamente al iniciar (por si el token está por expirar)
+  silentRefresh();
+
+  // Continuar refrescando cada 30 minutos
+  refreshIntervalId = setInterval(silentRefresh, REFRESH_INTERVAL_MS);
+  console.log("[api.js] Refresh proactivo iniciado");
+}
+
+export function stopProactiveRefresh() {
+  if (refreshIntervalId) {
+    clearInterval(refreshIntervalId);
+    refreshIntervalId = null;
+    console.log("[api.js] Refresh proactivo detenido");
+  }
+}
+
+// Auto-iniciar refresh proactivo si ya hay un token guardado (reload de página)
+if (readToken("access")) {
+  startProactiveRefresh();
+}
+
+// Detener refresh cuando se dispare logout
+window.addEventListener("app:logout", stopProactiveRefresh);
+
 // ---------- Logout global: limpia y avisa a la app ----------
 export async function logout() {
   try {
@@ -140,6 +186,10 @@ export async function loginEmail({ email, password, remember }) {
   });
   // Data solo trae "access" y "user", el refresh está en cookie.
   setTokens({ access: data.access, persist: remember });
+
+  // Iniciar refresh proactivo para mantener la sesión activa
+  startProactiveRefresh();
+
   return data;
 }
 

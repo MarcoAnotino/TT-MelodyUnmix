@@ -78,7 +78,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
@@ -103,15 +103,14 @@ MIDDLEWARE = [
 # =========================
 # CORS / CSRF
 # =========================
-CORS_ALLOW_ALL_ORIGINS = config("CORS_ALLOW_ALL_ORIGINS", default=True, cast=bool)
-CORS_ALLOW_CREDENTIALS = True # Permite cookies cross-origin
+CORS_ALLOW_ALL_ORIGINS = config("CORS_ALLOW_ALL_ORIGINS", default=False, cast=bool)
+CORS_ALLOW_CREDENTIALS = True
 
-# Si necesitas lista en vez de ALL:
-# CORS_ALLOWED_ORIGINS = [
-#     "http://localhost:3000",
-#     "http://127.0.0.1:3000",
-#     "https://tu-frontend.com",
-# ]
+CORS_ALLOWED_ORIGINS = [
+    o.strip()
+    for o in config("CORS_ALLOWED_ORIGINS", default="", cast=str).split(",")
+    if o.strip()
+]
 
 CSRF_TRUSTED_ORIGINS = [
     *[
