@@ -260,7 +260,7 @@ export default function Header({ variant = "default" }) {
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <button
             type="button"
-            onClick={() => closeMobileAndGo("/")}
+            onClick={() => closeMobileAndGo(user ? "/app" : "/")}
             className="flex items-center gap-2"
           >
             <img
@@ -270,6 +270,7 @@ export default function Header({ variant = "default" }) {
               draggable="false"
             />
           </button>
+
 
           {/* Botón hamburguesa solo en móvil */}
           <button

@@ -103,14 +103,14 @@ MIDDLEWARE = [
 # =========================
 # CORS / CSRF
 # =========================
-CORS_ALLOW_ALL_ORIGINS = config("CORS_ALLOW_ALL_ORIGINS", default=False, cast=bool)
+CORS_ALLOW_ALL_ORIGINS = config("CORS_ALLOW_ALL_ORIGINS", default=True, cast=bool)
 CORS_ALLOW_CREDENTIALS = True
 
-CORS_ALLOWED_ORIGINS = [
-    o.strip()
-    for o in config("CORS_ALLOWED_ORIGINS", default="", cast=str).split(",")
-    if o.strip()
-]
+# CORS_ALLOWED_ORIGINS = [
+#     o.strip()
+#     for o in config("CORS_ALLOWED_ORIGINS", default="", cast=str).split(",")
+#     if o.strip()
+# ]
 
 CSRF_TRUSTED_ORIGINS = [
     *[

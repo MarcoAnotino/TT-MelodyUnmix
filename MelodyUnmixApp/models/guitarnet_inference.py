@@ -11,7 +11,7 @@ Output:
     - output_folder/guitar.wav
     - output_folder/others.wav
 """
-
+import shutil
 import torch
 import torch.nn as nn
 import torchaudio
@@ -587,6 +587,23 @@ def main():
         default=30,
         help="Duración de chunks en segundos para audios largos (default: 30)"
     )
+    parser.add_argument(
+    "--validator",
+    type=str,
+    default="validator_guitar.npz",
+    help="Ruta al validador (.npz) para decidir si aplicar GuitarNet"
+    )
+    parser.add_argument(
+        "--validator_max_seconds",
+        type=float,
+        default=30.0,
+        help="Segundos a analizar del others para el validador (default 30)"
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Fuerza aplicar GuitarNet aunque el validador diga que no"
+    )
     
     args = parser.parse_args()
     
@@ -634,8 +651,59 @@ def separate_guitar(input_audio, output_folder, model_path="./guitarnet_model.pt
             model_path="my_model.pth"
         )
     """
-    separator = GuitarSeparator(model_path)
-    return separator.separate(input_audio, output_folder)
+        # -------------------------------------------------
+    # 0) Validador (gate): decidir si aplicar GuitarNet
+    # -------------------------------------------------
+    out_dir = Path(args.output)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    apply_model, score, thr, feats = should_apply_model(
+        others_audio_path=args.input,          # args.input ES el others.wav de Demucs
+        validator_npz=args.validator,
+        sr=44100,
+        max_seconds=args.validator_max_seconds
+    )
+
+    print(f"\n[VALIDADOR] score={score:.3f} thr={thr:.3f} => apply_model={apply_model}")
+
+    if args.force:
+        print("[VALIDADOR] --force activado: se aplicará GuitarNet sí o sí.")
+        apply_model = True
+
+    if not apply_model:
+        # NO aplicar GuitarNet: el others de Demucs ya es “guitarra suficiente”
+        guitar_path = out_dir / "guitar.wav"
+        others_path = out_dir / "others.wav"
+
+        print("[VALIDADOR] Skip GuitarNet: copiando others -> guitar.wav")
+        shutil.copyfile(args.input, guitar_path)
+
+        # residual vacío para mantener el pipeline consistente
+        wav, sr = torchaudio.load(args.input)
+        zeros = torch.zeros_like(wav)
+        torchaudio.save(str(others_path), zeros, sr)
+
+        print(f"✅ Listo: {guitar_path} (copiado) | {others_path} (silencio)")
+        return  # o sys.exit(0)
+
+    # -------------------------------------------------
+    # 1) Sí aplica: correr GuitarNet normal
+    # -------------------------------------------------
+    separator = GuitarSeparator(args.model, device=args.device)
+
+    try:
+        guitar_path, others_path = separator.separate(
+            args.input,
+            args.output,
+            chunk_duration=args.chunk_duration
+        )
+        print("¡Separación completada exitosamente!")
+    except Exception as e:
+        print(f"Error durante la separación: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+
 
 
 if __name__ == "__main__":
